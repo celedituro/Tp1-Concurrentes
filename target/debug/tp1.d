@@ -1,0 +1,1 @@
+C:\Users\Asus\Desktop\Facultad\Técnicas\ de\ Programación\ Concurrente\2023-1c-tp1-celedituro\target\debug\tp1.exe: C:\Users\Asus\Desktop\Facultad\Técnicas\ de\ Programación\ Concurrente\2023-1c-tp1-celedituro\src\main.rs
