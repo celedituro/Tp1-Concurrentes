@@ -13,17 +13,50 @@ struct Orders {
     orders: Vec<Order>,
 }
 
-fn main() -> Result<(), std::io::Error> {
-    let file = std::env::args().nth(1).unwrap();
+#[derive(Debug)]
+enum Error {
+    NotFileInput,
+    FileNotFound,
+    Serialize,
+}
 
-    let orders = {
-        let orders = std::fs::read_to_string(&file)?;
-
-        serde_json::from_str::<Orders>(&orders).unwrap()
+fn get_file_name() -> Result<String, Error> {
+    let file = match std::env::args().nth(1) {
+        Some(file) => file,
+        None => return Err(Error::NotFileInput),
     };
 
-    for index in 0..orders.orders.len() {
-        println!("Order: {:?}", orders.orders[index]);
+    Ok(file)
+}
+
+fn open_file(file: &String) -> Result<String, Error> {
+    let orders = match std::fs::read_to_string(file) {
+        Ok(orders) => orders,
+        Err(_e) => return Err(Error::FileNotFound),
+    };
+
+    Ok(orders)
+}
+
+fn serialize(orders: &str) -> Result<Orders, Error> {
+    let orders = match serde_json::from_str::<Orders>(orders) {
+        Ok(orders) => orders,
+        Err(_) => return Err(Error::Serialize),
+    };
+
+    Ok(orders)
+}
+
+fn main() -> Result<(), Error> {
+    let file = get_file_name()?;
+
+    let orders = {
+        let orders = open_file(&file)?;
+        serialize(&orders)?
+    };
+
+    for idx in 0..orders.orders.len() {
+        println!("Order: {:?}", orders.orders[idx]);
     }
 
     Ok(())
