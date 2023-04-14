@@ -15,8 +15,8 @@
 
 ## Ejecución del programa
 
-```cargo run pedidos.json```
+```cargo run orders.json```
 
 ## Dependencias
 
-- serde para serializar el archivo de pedidos json.
+- serde para serializar el archivo de pedidos.
