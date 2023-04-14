@@ -2,10 +2,12 @@
 
 ## Análisis del Problema
 
-![Tp-Concu](https://user-images.githubusercontent.com/67125933/231528209-6884b8e9-a849-43b8-8978-5a003ad37dd9.png)
+![Tp-Concu](https://user-images.githubusercontent.com/67125933/232071325-91781e50-cf5c-4397-bff5-455284c109cf.png)
 
 ## Hipótesis
 
-- Cada dispensador puede preparar un café. Pero los N dispensadores actúan concurrentemente.
+- Cada dispensador de una máquina puede preparar un café.
+- Los N dispensadores de una máquina actúan concurrentemente.
+- Un dispenser puede cargar no siempre el mismo ingrediente.
 - Los contenedores empiezan llenos.
 - Los contenedores no se recargan.
