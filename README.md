@@ -11,3 +11,11 @@
 - Un dispenser puede cargar no siempre el mismo ingrediente.
 - Los contenedores empiezan llenos.
 - Los contenedores no se recargan.
+
+## Ejecución del programa
+
+```cargo run pedidos.json```
+
+## Dependencias
+
+- serde para serializar el archivo de pedidos json.

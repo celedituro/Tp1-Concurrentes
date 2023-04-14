@@ -1,0 +1,10 @@
+{
+    "orders":[
+        {
+            "coffee": 100,
+            "water": 10,
+            "cocoa": 5,
+            "foam": 50
+        }
+    ]
+}
