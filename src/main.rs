@@ -17,7 +17,7 @@ struct Orders {
 enum Error {
     NotFileInput,
     FileNotFound,
-    Serialize,
+    WrongFileFormat,
 }
 
 fn get_file_name() -> Result<String, Error> {
@@ -41,7 +41,7 @@ fn open_file(file: &String) -> Result<String, Error> {
 fn serialize(orders: &str) -> Result<Orders, Error> {
     let orders = match serde_json::from_str::<Orders>(orders) {
         Ok(orders) => orders,
-        Err(_) => return Err(Error::Serialize),
+        Err(_) => return Err(Error::WrongFileFormat),
     };
 
     Ok(orders)
