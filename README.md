@@ -19,4 +19,9 @@
 
 ## Dependencias
 
-- serde para serializar el archivo de pedidos.
+- serde para deserializar el archivo de pedidos.
+
+## Resolución del problema
+
+1. Primero modele el problema para una cafetera que contiene una dispenser por lo que el programa era secuencial hasta ese momento.
+2. Luego, lo modele utilizando N dispensers por cafetera.

@@ -1,10 +1,10 @@
 {
     "all":[
         {
-            "coffee": 100,
+            "coffee": 5,
             "water": 10,
-            "cocoa": 5,
-            "foam": 50
+            "cocoa": 2,
+            "foam": 2
         }
     ]
 }
