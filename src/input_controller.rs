@@ -33,11 +33,13 @@ pub mod icontroller {
 }
 
 mod tests {
-    
+
     #[test]
     fn get_a_valid_filename() {
         let expected_file = "orders.json".to_string();
-        let got_file = crate::input_controller::icontroller::get_filename(Some("orders.json".to_string())).unwrap();
+        let got_file =
+            crate::input_controller::icontroller::get_filename(Some("orders.json".to_string()))
+                .unwrap();
         assert_eq!(expected_file, got_file);
     }
 }

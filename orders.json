@@ -5,12 +5,6 @@
             "water": 10,
             "cocoa": 5,
             "foam": 50
-        },
-        {
-            "coffee": 10,
-            "water": 50,
-            "cocoa": 0,
-            "foam": 0
         }
     ]
 }

@@ -7,8 +7,8 @@ pub struct Orders {
 
 #[derive(Deserialize, Debug)]
 pub struct Order {
-    _coffee: Option<u32>,
-    _water: Option<u32>,
-    _cocoa: Option<u32>,
-    _foam: Option<u32>,
+    pub coffee: u32,
+    pub water: u32,
+    pub cocoa: u32,
+    pub foam: u32,
 }
