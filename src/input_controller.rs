@@ -2,8 +2,8 @@ pub mod icontroller {
     use crate::{errors::Error, orders::Orders};
 
     // Gets the filename of orders if it can, returns an error if not.
-    pub fn get_file_name() -> Result<String, Error> {
-        let file = match std::env::args().nth(1) {
+    pub fn get_filename(input: Option<String>) -> Result<String, Error> {
+        let file = match input {
             Some(file) => file,
             None => return Err(Error::NotFileInput),
         };
@@ -29,5 +29,15 @@ pub mod icontroller {
         };
 
         Ok(orders)
+    }
+}
+
+mod tests {
+    
+    #[test]
+    fn get_a_valid_filename() {
+        let expected_file = "orders.json".to_string();
+        let got_file = crate::input_controller::icontroller::get_filename(Some("orders.json".to_string())).unwrap();
+        assert_eq!(expected_file, got_file);
     }
 }
