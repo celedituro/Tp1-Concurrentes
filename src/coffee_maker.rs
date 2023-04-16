@@ -20,7 +20,7 @@ impl CoffeeMaker {
         self.get_ingredient(containers.clone(), &COFFEE.to_owned(), order.coffee)?;
         self.get_ingredient(containers.clone(), &WATER.to_owned(), order.water)?;
         self.get_ingredient(containers.clone(), &COCOA.to_owned(), order.cocoa)?;
-        self.get_ingredient(containers.clone(), &FOAM.to_owned(), order.foam)?;
+        self.get_ingredient(containers, &FOAM.to_owned(), order.foam)?;
 
         Ok(())
     }

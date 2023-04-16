@@ -1,11 +1,6 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub struct Orders {
-    pub all: Vec<Order>,
-}
-
-#[derive(Deserialize, Debug)]
 pub struct Order {
     pub coffee: u32,
     pub water: u32,
@@ -14,17 +9,12 @@ pub struct Order {
 }
 
 impl Order {
-    pub fn new(
-        coffee_quantity: u32,
-        water_quantity: u32,
-        cocoa_quantity: u32,
-        foam_quantity: u32,
-    ) -> Order {
+    pub fn new(coffee_value: u32, water_value: u32, cocoa_value: u32, foam_value: u32) -> Order {
         Order {
-            coffee: coffee_quantity,
-            water: water_quantity,
-            cocoa: cocoa_quantity,
-            foam: foam_quantity,
+            coffee: coffee_value,
+            water: water_value,
+            cocoa: cocoa_value,
+            foam: foam_value,
         }
     }
 }
