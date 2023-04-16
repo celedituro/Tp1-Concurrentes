@@ -23,7 +23,7 @@ fn main() -> Result<(), Error> {
             println!("[DISPENSER {:?}] STARTING", i);
             match get_order(orders, container, i) {
                 Ok(_) => println!("[DISPENSER {:?}] FINALIZING", i),
-                Err(e) => println!("[DISPENSER {:?}] ABOTING FOR {:?}", i, e),
+                Err(e) => println!("[DISPENSER {:?}] ABORTING FOR {:?}", i, e),
             }
         });
         dispensers.push(handle);

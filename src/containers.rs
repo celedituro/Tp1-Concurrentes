@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use crate::{container::Container, errors::Error, orders::Order};
 
-const MAX_COFFEE: u32 = 5;
-const MAX_WATER: u32 = 10;
-const MAX_COCOA: u32 = 2;
-const MAX_FOAM: u32 = 2;
+const MAX_COFFEE: u32 = 100;
+const MAX_WATER: u32 = 100;
+const MAX_COCOA: u32 = 100;
+const MAX_FOAM: u32 = 100;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
@@ -47,23 +47,23 @@ impl Containers {
 
     pub fn get_ingredients(&mut self, order: Order, dispenser_id: i32) -> Result<(), Error> {
         println!(
-            "[DISPENSER {:?}] GETTING {:?} OF CAFE",
-            dispenser_id, order.coffee
+            "[DISPENSER {:?}] GETTING COFFEE",
+            dispenser_id
         );
         self.get_ingredient(&COFFEE.to_owned(), order.coffee, dispenser_id)?;
         println!(
-            "[DISPENSER {:?}] GETTING {:?} OF WATER",
-            dispenser_id, order.water
+            "[DISPENSER {:?}] GETTING WATER",
+            dispenser_id
         );
         self.get_ingredient(&WATER.to_owned(), order.water, dispenser_id)?;
         println!(
-            "[DISPENSER {:?}] GETTING {:?} OF COCOA",
-            dispenser_id, order.cocoa
+            "[DISPENSER {:?}] GETTING COCOA",
+            dispenser_id
         );
         self.get_ingredient(&COCOA.to_owned(), order.cocoa, dispenser_id)?;
         println!(
-            "[DISPENSER {:?}] GETTING {:?} OF FOAM",
-            dispenser_id, order.foam
+            "[DISPENSER {:?}] GETTING FOAM",
+            dispenser_id
         );
         self.get_ingredient(&FOAM.to_owned(), order.foam, dispenser_id)?;
 
