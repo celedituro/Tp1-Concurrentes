@@ -44,7 +44,7 @@ impl Containers {
         let updated_value = if total >= value {
             total - value
         } else {
-            return Err(Error::DontHaveIngredient);
+            return Err(Error::NotHaveEnoughIngredient);
         };
 
         Ok(updated_value)
@@ -68,7 +68,7 @@ impl Default for Containers {
 mod tests {
 
     #[test]
-    fn get_an_order_that_consumes_available_ingredients() {
+    fn test01_get_an_order_that_consumes_available_ingredients() {
         let mut containers = super::Containers::new();
         let order = crate::orders::Order::new(4, 9, 1, 1);
 
@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn get_an_order_that_consumes_all_ingredients() {
+    fn test02_get_an_order_that_consumes_all_ingredients() {
         let mut containers = super::Containers::new();
         let order = crate::orders::Order::new(5, 10, 2, 2);
 
@@ -104,12 +104,12 @@ mod tests {
     }
 
     #[test]
-    fn get_an_order_that_cant_be_completed() {
+    fn test03_get_an_order_that_cant_be_completed() {
         let mut containers = super::Containers::new();
         let order = crate::orders::Order::new(6, 10, 2, 2);
 
         let result = containers.get_order(&order).unwrap_err();
-        let err_expected = crate::errors::Error::DontHaveIngredient;
+        let err_expected = crate::errors::Error::NotHaveEnoughIngredient;
 
         assert_eq!(result, err_expected);
     }

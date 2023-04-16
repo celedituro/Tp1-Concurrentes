@@ -11,7 +11,7 @@
 - Un dispenser puede cargar no siempre el mismo ingrediente.
 - Los contenedores empiezan llenos.
 - Los contenedores no se recargan.
-- Un pedido tiene los 4 ingredientes pero el valor de algunos de los 4 puede ser 0.
+- Un pedido tiene los 4 ingredientes pero el valor de alguno de los mismos puede ser 0.
 
 ## Ejecución del programa
 
