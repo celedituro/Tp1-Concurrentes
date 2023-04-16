@@ -32,7 +32,7 @@ mod tests {
     fn test01_get_an_order_that_cant_be_completed() {
         let containers =
             std::sync::Arc::new(std::sync::RwLock::new(crate::containers::Containers::new()));
-        let order = crate::orders::Order::new(6, 10, 2, 2);
+        let order = crate::orders::Order::new(110, 100, 100, 100);
         let mut vec = Vec::new();
         vec.push(order);
         println!("vec: {:?}", &vec);
