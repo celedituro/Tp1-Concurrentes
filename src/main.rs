@@ -1,3 +1,4 @@
+use tp1::coffee_maker::CoffeeMaker;
 use tp1::containers::Containers;
 use tp1::{
     errors::Error,
@@ -12,15 +13,16 @@ fn main() -> Result<(), Error> {
         deserialize(&orders)?
     };
 
-    let mut containers = Containers::new();
+    let containers = Containers::new();
+    let mut coffee_maker = CoffeeMaker::new(1);
 
     for idx in 0..orders.all.len() {
         let current_order = &orders.all[idx];
         println!("{:?}", current_order);
 
-        containers.get_order(current_order)?;
-        println!("{:?}", containers);
+        coffee_maker.get_order(containers.clone(), current_order)?;
     }
 
+    println!("{:?}", containers);
     Ok(())
 }
