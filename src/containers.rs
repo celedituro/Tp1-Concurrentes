@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::orders::Order;
+use crate::{errors::Error, orders::Order};
 
 const MAX_COFFEE: u32 = 5;
 const MAX_WATER: u32 = 10;
@@ -30,17 +30,32 @@ impl Containers {
     }
 
     // Gets all the ingredients for an order
-    pub fn get_order(&mut self, order: &Order) {
-        self.get_ingredient(&COFFEE.to_owned(), order.coffee);
-        self.get_ingredient(&WATER.to_owned(), order.water);
-        self.get_ingredient(&COCOA.to_owned(), order.cocoa);
-        self.get_ingredient(&FOAM.to_owned(), order.foam);
+    pub fn get_order(&mut self, order: &Order) -> Result<(), Error> {
+        self.get_ingredient(&COFFEE.to_owned(), order.coffee)?;
+        self.get_ingredient(&WATER.to_owned(), order.water)?;
+        self.get_ingredient(&COCOA.to_owned(), order.cocoa)?;
+        self.get_ingredient(&FOAM.to_owned(), order.foam)?;
+
+        Ok(())
     }
 
     // Updates the availability of the ingredients
-    pub fn get_ingredient(&mut self, ingredient: &String, value: u32) {
-        let update_value = self.all[ingredient] - value;
+    pub fn update_availability(&mut self, total: u32, value: u32) -> Result<u32, Error> {
+        let updated_value = if total >= value {
+            total - value
+        } else {
+            return Err(Error::DontHaveIngredient);
+        };
+
+        Ok(updated_value)
+    }
+
+    // Gets all the ingredients of an order
+    pub fn get_ingredient(&mut self, ingredient: &String, value: u32) -> Result<(), Error> {
+        let update_value = self.update_availability(self.all[ingredient], value)?;
         self.all.insert(String::from(ingredient), update_value);
+
+        Ok(())
     }
 }
 
@@ -57,7 +72,7 @@ mod tests {
         let mut containers = super::Containers::new();
         let order = crate::orders::Order::new(4, 9, 1, 1);
 
-        containers.get_order(&order);
+        containers.get_order(&order).unwrap();
 
         let coffe_got = containers.all[&super::COFFEE.to_owned()];
         let water_got = containers.all[&super::WATER.to_owned()];
@@ -75,7 +90,7 @@ mod tests {
         let mut containers = super::Containers::new();
         let order = crate::orders::Order::new(5, 10, 2, 2);
 
-        containers.get_order(&order);
+        containers.get_order(&order).unwrap();
 
         let coffe_got = containers.all[&super::COFFEE.to_owned()];
         let water_got = containers.all[&super::WATER.to_owned()];
@@ -86,5 +101,16 @@ mod tests {
         assert_eq!(0, water_got);
         assert_eq!(0, cocoa_got);
         assert_eq!(0, foam_got);
+    }
+
+    #[test]
+    fn get_an_order_that_cant_be_completed() {
+        let mut containers = super::Containers::new();
+        let order = crate::orders::Order::new(6, 10, 2, 2);
+
+        let result = containers.get_order(&order).unwrap_err();
+        let err_expected = crate::errors::Error::DontHaveIngredient;
+
+        assert_eq!(result, err_expected);
     }
 }

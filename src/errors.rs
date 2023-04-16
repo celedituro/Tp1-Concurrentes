@@ -1,6 +1,7 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     NotFileInput,
     FileNotFound,
     WrongFileFormat,
+    DontHaveIngredient,
 }

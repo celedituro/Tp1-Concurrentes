@@ -18,7 +18,7 @@ fn main() -> Result<(), Error> {
         let current_order = &orders.all[idx];
         println!("{:?}", current_order);
 
-        containers.get_order(current_order);
+        containers.get_order(current_order)?;
         println!("{:?}", containers);
     }
 
