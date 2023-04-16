@@ -3,5 +3,9 @@ pub enum Error {
     NotFileInput,
     FileNotFound,
     WrongFileFormat,
-    NotHaveEnoughIngredient,
+    NotEnoughIngredient,
+    NoMoreOrders,
+    CantHaveContainersLock,
+    CantHaveDoneLock,
+    CantHaveOrdersLock,
 }

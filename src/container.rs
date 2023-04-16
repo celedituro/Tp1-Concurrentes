@@ -14,11 +14,24 @@ impl Container {
     }
 
     // Updates its availability
-    pub fn update_availability(&mut self, value: u32) -> Result<(), Error> {
+    pub fn update_availability(
+        &mut self,
+        value: u32,
+        dispenser_id: i32,
+        ingredient: &String,
+    ) -> Result<(), Error> {
+        println!(
+            "[DISPENSER {:?}] GETTING {:?} OF {:?} FROM {:?}",
+            dispenser_id, value, ingredient, self.availability
+        );
         if self.availability >= value {
             self.availability -= value
         } else {
-            return Err(Error::NotHaveEnoughIngredient);
+            println!(
+                "[DISPENSER {:?}] ERROR NOT ENOUGH {:?}",
+                dispenser_id, ingredient
+            );
+            return Err(Error::NotEnoughIngredient);
         };
 
         Ok(())
