@@ -1,4 +1,4 @@
-use tp1::coffee_maker::CoffeeMaker;
+use tp1::coffee_maker::coffe_maker::get_order;
 use tp1::containers::Containers;
 use tp1::errors::Error;
 use tp1::input_controller::InputController;
@@ -8,11 +8,10 @@ fn main() -> Result<(), Error> {
     let orders = icontroller.get_orders()?;
 
     let containers = Containers::new();
-    let mut coffee_maker = CoffeeMaker::new(1);
 
     for order in &orders {
         println!("{:?}", order);
-        coffee_maker.get_order(containers.clone(), order)?;
+        get_order(containers.clone(), order)?;
     }
 
     Ok(())
