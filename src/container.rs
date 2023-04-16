@@ -6,14 +6,14 @@ pub struct Container {
 }
 
 impl Container {
-    // Creates a container with its availability of ingredient
+    // Creates a container with its availability
     pub fn new(value: u32) -> Container {
         Container {
             availability: value,
         }
     }
 
-    // Updates the availability of its ingredient
+    // Updates its availability
     pub fn update_availability(&mut self, value: u32) -> Result<(), Error> {
         if self.availability >= value {
             self.availability -= value

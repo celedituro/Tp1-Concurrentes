@@ -6,14 +6,14 @@ pub mod coffe_maker {
     const COCOA: &str = "cocoa";
     const FOAM: &str = "foam";
 
-    // Gets all the ingredients of an order
+    // Gets the ingredients of an order
     pub fn get_ingredient(
         mut containers: Containers,
         ingredient: &String,
         value: u32,
     ) -> Result<(), Error> {
-        if let Some(container) = containers.all.get_mut(ingredient) {
-            container.update_availability(value)?;
+        if let Some(c) = containers.all.get_mut(ingredient) {
+            c.update_availability(value)?;
         }
 
         Ok(())
