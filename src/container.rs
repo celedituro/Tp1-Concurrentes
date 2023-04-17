@@ -2,34 +2,31 @@ use crate::errors::Error;
 
 #[derive(Debug, Clone)]
 pub struct Container {
-    pub availability: u32,
+    pub name: String,
+    pub quantity: u32,
 }
 
 impl Container {
-    // Creates a container with its availability
-    pub fn new(value: u32) -> Container {
+    // Creates a container with its quantity
+    pub fn new(ingredient: String, value: u32) -> Container {
         Container {
-            availability: value,
+            name: ingredient,
+            quantity: value,
         }
     }
 
-    // Updates its availability
-    pub fn update_availability(
-        &mut self,
-        value: u32,
-        dispenser_id: i32,
-        ingredient: &String,
-    ) -> Result<(), Error> {
+    // Updates its quantity
+    pub fn update_quantity(&mut self, value: u32, dispenser_id: i32) -> Result<(), Error> {
         println!(
             "[DISPENSER {:?}] GETTING {:?} OF {:?} FROM {:?}",
-            dispenser_id, value, ingredient, self.availability
+            dispenser_id, value, self.name, self.quantity
         );
-        if self.availability >= value {
-            self.availability -= value
+        if self.quantity >= value {
+            self.quantity -= value
         } else {
             println!(
                 "[DISPENSER {:?}] ERROR NOT ENOUGH {:?}",
-                dispenser_id, ingredient
+                dispenser_id, self.name
             );
             return Err(Error::NotEnoughIngredient);
         };
@@ -40,6 +37,6 @@ impl Container {
 
 impl Default for Container {
     fn default() -> Self {
-        Self::new(0)
+        Self::new("".to_string(), 0)
     }
 }

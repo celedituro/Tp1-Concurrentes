@@ -22,5 +22,11 @@
         "water": 10,
         "cocoa": 2,
         "foam": 2
+    },
+    {
+        "coffee": 15,
+        "water": 20,
+        "cocoa": 7,
+        "foam": 8
     }
 ]

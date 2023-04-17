@@ -6,17 +6,17 @@ use tp1::containers::Containers;
 use tp1::errors::Error;
 use tp1::input_controller::InputController;
 
-const DISPENSERS: i32 = 3;
+const DISPENSERS: i32 = 5;
 
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
     let orders = Arc::new(RwLock::new(icontroller.get_orders()?));
-    let containers = Arc::new(RwLock::new(Containers::new()));
+    let containers = Containers::new();
 
     let mut dispensers = Vec::new();
 
     for i in 0..DISPENSERS {
-        let container = Arc::clone(&containers);
+        let container = containers.clone();
         let orders = Arc::clone(&orders);
 
         let handle = thread::spawn(move || {

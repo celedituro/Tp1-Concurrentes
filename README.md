@@ -24,4 +24,4 @@
 ## Resolución del problema
 
 1. Primero modelé el problema para 1 cafetera que contiene 1 dispenser.
-2. Luego agregué más N dispensers a la cafetera de manera que la misma pueda hacer N pedidos a la vez.
+2. Luego agregué N dispensers a la cafetera de manera que la misma pueda hacer N pedidos a la vez.
