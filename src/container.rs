@@ -29,10 +29,6 @@ impl Container {
         if self.quantity >= value {
             self.quantity -= value
         } else {
-            println!(
-                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ERROR NOT ENOUGH {:?}",
-                dispenser_id, coffee_maker_id, self.name
-            );
             return Err(Error::NotEnoughIngredient);
         };
 
