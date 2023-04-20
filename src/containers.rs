@@ -5,10 +5,10 @@ use std::{
 
 use crate::{container::Container, errors::Error, orders::Order};
 
-const MAX_COFFEE: u32 = 5;
-const MAX_WATER: u32 = 5;
-const MAX_COCOA: u32 = 2;
-const MAX_FOAM: u32 = 2;
+const MAX_COFFEE: u32 = 100;
+const MAX_WATER: u32 = 100;
+const MAX_COCOA: u32 = 50;
+const MAX_FOAM: u32 = 50;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
@@ -50,31 +50,70 @@ impl Containers {
         ingredient: &String,
         value: u32,
         dispenser_id: i32,
+        coffee_maker_id: i32,
     ) -> Result<(), Error> {
         if let Some(c) = self.all.get_mut(ingredient) {
             if let Ok(mut container) = c.write() {
-                container.update_quantity(value, dispenser_id)?;
+                container.update_quantity(value, dispenser_id, coffee_maker_id)?;
             } else {
                 return Err(Error::NotEnoughIngredient);
             }
         }
 
-        println!("[DISPENSER {:?}] GOT {:?}", dispenser_id, ingredient);
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT {:?}",
+            dispenser_id, coffee_maker_id, ingredient
+        );
 
         Ok(())
     }
 
-    pub fn get_ingredients(&mut self, order: Order, dispenser_id: i32) -> Result<(), Error> {
-        println!("[DISPENSER {:?}] GETTING COFFEE", dispenser_id);
-        self.get_ingredient(&COFFEE.to_owned(), order.coffee, dispenser_id)?;
-        println!("[DISPENSER {:?}] GETTING WATER", dispenser_id);
-        self.get_ingredient(&WATER.to_owned(), order.water, dispenser_id)?;
-        println!("[DISPENSER {:?}] GETTING COCOA", dispenser_id);
-        self.get_ingredient(&COCOA.to_owned(), order.cocoa, dispenser_id)?;
-        println!("[DISPENSER {:?}] GETTING FOAM", dispenser_id);
-        self.get_ingredient(&FOAM.to_owned(), order.foam, dispenser_id)?;
+    pub fn get_ingredients(
+        &mut self,
+        order: Order,
+        dispenser_id: i32,
+        coffee_maker_id: i32,
+    ) -> Result<(), Error> {
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GETTING COFFEE",
+            dispenser_id, coffee_maker_id
+        );
+        self.get_ingredient(
+            &COFFEE.to_owned(),
+            order.coffee,
+            dispenser_id,
+            coffee_maker_id,
+        )?;
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GETTING WATER",
+            dispenser_id, coffee_maker_id
+        );
+        self.get_ingredient(
+            &WATER.to_owned(),
+            order.water,
+            dispenser_id,
+            coffee_maker_id,
+        )?;
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GETTING COCOA",
+            dispenser_id, coffee_maker_id
+        );
+        self.get_ingredient(
+            &COCOA.to_owned(),
+            order.cocoa,
+            dispenser_id,
+            coffee_maker_id,
+        )?;
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GETTING FOAM",
+            dispenser_id, coffee_maker_id
+        );
+        self.get_ingredient(&FOAM.to_owned(), order.foam, dispenser_id, coffee_maker_id)?;
 
-        println!("[DISPENSER {:?}] GOT ALL INGREDIENTS", dispenser_id);
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS",
+            dispenser_id, coffee_maker_id
+        );
         Ok(())
     }
 }

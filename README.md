@@ -12,6 +12,7 @@
 - Los contenedores empiezan llenos.
 - Los contenedores no se recargan.
 - Un pedido tiene los 4 ingredientes pero el valor de alguno de los mismos puede ser 0.
+- Las ordenes se obtienen al principio de la ejecución del programa a partir de un archivo json.
 
 ## Ejecución del programa
 
@@ -23,4 +24,4 @@
 
 ## Resolución del problema
 
-Tengo 1 máquina de café con N dispensers y N ordenes. Los dispensers hacen 1 orden y de forma simulatánea. Para hacer 1 orden, los dispensers le piden los ingredientes a los contenedores de la máquina de café. Por ahora, el orden en que los dispensers piden café está preestablecido: café, agua, cacao y espuma.
+Hay N máquinas de café con N dispensers y N ordenes cada una. Cada dispenser de cada máquina de café hace 1 orden y de forma simulatánea con el resto de los dispensers de la misma máquina. Para hacer 1 orden, los dispensers le piden los ingredientes a los contenedores de su máquina de café. El orden en que los dispensers piden café está preestablecido: café, agua, cacao y espuma.
