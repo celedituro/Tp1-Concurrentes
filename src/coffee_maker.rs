@@ -1,6 +1,9 @@
 use crate::containers::Containers;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
+use std::thread::{self, JoinHandle};
+
+const DISPENSERS: i32 = 3;
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
@@ -36,7 +39,7 @@ impl CoffeeMaker {
     pub fn process_order(
         mut self,
         orders: Arc<RwLock<Vec<Order>>>,
-        dispenser_id: i32
+        dispenser_id: i32,
     ) -> Result<(), Error> {
         if let Ok(order) = self.clone().get_order(orders) {
             println!(
@@ -47,6 +50,53 @@ impl CoffeeMaker {
                 .get_ingredients(order, dispenser_id, self.id)?;
         } else {
             return Err(Error::NoMoreOrders);
+        }
+
+        Ok(())
+    }
+
+    // Makes the dispensers to work
+    pub fn work(&self, orders: &Arc<RwLock<Vec<Order>>>) -> Result<(), Error> {
+        let mut dispensers: Vec<JoinHandle<()>> = Vec::new();
+        for i in 0..DISPENSERS {
+            let orders = Arc::clone(orders);
+            let coffee_maker = self.clone();
+            let handle = thread::spawn(move || {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING",
+                    i,
+                    coffee_maker.clone().id
+                );
+                match coffee_maker.clone().process_order(orders, i) {
+                    Ok(_) => println!(
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
+                        i,
+                        coffee_maker.clone().id
+                    ),
+                    Err(error) => {
+                        match error {
+                            Error::NotEnoughIngredient => {
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE INGREDIENTS", i, coffee_maker.clone().id)
+                            }
+                            Error::NoMoreOrders => {
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS", i, coffee_maker.clone().id);
+                            }
+                            _ => println!(
+                                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ABORTING FOR {:?}",
+                                i, coffee_maker.id, error
+                            ),
+                        }
+                    }
+                }
+            });
+            dispensers.push(handle);
+        }
+
+        for handle in dispensers {
+            match handle.join() {
+                Ok(_) => println!("FINALIZING"),
+                Err(_) => println!("ERROR WHEN JOINING"),
+            }
         }
 
         Ok(())
