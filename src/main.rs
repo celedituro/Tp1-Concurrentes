@@ -27,6 +27,9 @@ fn main() -> Result<(), Error> {
                     Error::NotEnoughIngredient => {
                         println!("[DISPENSER {:?}] THERE ARE NO MORE INGREDIENTS", i)
                     }
+                    Error::NoMoreOrders => {
+                        println!("[DISPENSER {:?}] THERE ARE NO MORE ORDERS", i);
+                    }
                     _ => println!("[DISPENSER {:?}] ABORTING FOR {:?}", i, error),
                 },
             }
