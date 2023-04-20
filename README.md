@@ -23,5 +23,4 @@
 
 ## Resolución del problema
 
-1. Primero modelé el problema para 1 cafetera que contiene 1 dispenser.
-2. Luego agregué N dispensers a la cafetera de manera que la misma pueda hacer N pedidos a la vez.
+Tengo 1 máquina de café con N dispensers y N ordenes. Los dispensers hacen 1 orden y de forma simulatánea. Para hacer 1 orden, los dispensers le piden los ingredientes a los contenedores de la máquina de café. Por ahora, el orden en que los dispensers piden café está preestablecido: café, agua, cacao y espuma.
