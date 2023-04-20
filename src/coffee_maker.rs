@@ -9,13 +9,22 @@ pub mod coffe_maker {
         mut containers: Containers,
         dispenser_id: i32,
     ) -> Result<(), Error> {
-        let order = {
-            let mut orders = orders.write().unwrap();
-            orders.remove(0)
+        let order = if let Ok(mut orders) = orders.write() {
+            if !orders.is_empty() {
+                Some(orders.remove(0))
+            } else {
+                None
+            }
+        } else {
+            None
         };
 
-        println!("[DISPENSER {:?}] MAKING {:?}", dispenser_id, order);
-        containers.get_ingredients(order, dispenser_id)?;
+        if let Some(order) = order {
+            println!("[DISPENSER {:?}] MAKING {:?}", dispenser_id, order);
+            containers.get_ingredients(order, dispenser_id)?;
+        } else {
+            println!("[DISPENSER {:?}] THERE ARE NO MORE ORDERS", dispenser_id);
+        }
 
         Ok(())
     }

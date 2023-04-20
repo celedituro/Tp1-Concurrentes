@@ -6,7 +6,7 @@ use tp1::containers::Containers;
 use tp1::errors::Error;
 use tp1::input_controller::InputController;
 
-const DISPENSERS: i32 = 5;
+const DISPENSERS: i32 = 10;
 
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
@@ -21,9 +21,11 @@ fn main() -> Result<(), Error> {
 
         let handle = thread::spawn(move || {
             println!("[DISPENSER {:?}] STARTING", i);
-            match get_order(orders, container, i) {
-                Ok(_) => println!("[DISPENSER {:?}] FINALIZING", i),
-                Err(e) => println!("[DISPENSER {:?}] ABORTING FOR {:?}", i, e),
+            {
+                match get_order(orders, container, i) {
+                    Ok(_) => println!("[DISPENSER {:?}] FINALIZING", i),
+                    Err(e) => println!("[DISPENSER {:?}] ABORTING FOR {:?}", i, e),
+                }
             }
         });
         dispensers.push(handle);
