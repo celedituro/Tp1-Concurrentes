@@ -9,6 +9,7 @@ pub struct CoffeeMaker {
 }
 
 impl CoffeeMaker {
+    // Creates a coffee maker with its container of ingredients and its id
     pub fn new(id_value: i32) -> CoffeeMaker {
         CoffeeMaker {
             id: id_value,
@@ -17,14 +18,10 @@ impl CoffeeMaker {
     }
 
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
-    pub fn get_order(
-        mut self,
-        orders: Arc<RwLock<Vec<Order>>>,
-        dispenser_id: i32,
-    ) -> Result<(), Error> {
-        let order: Option<Order> = if let Ok(mut orders) = orders.write() {
+    fn get_order(self, orders: Arc<RwLock<Vec<Order>>>) -> Result<Order, Error> {
+        let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
-                Some(orders.remove(0))
+                orders.remove(0)
             } else {
                 return Err(Error::NoMoreOrders);
             }
@@ -32,7 +29,16 @@ impl CoffeeMaker {
             return Err(Error::NoMoreOrders);
         };
 
-        if let Some(order) = order {
+        Ok(order)
+    }
+
+    // Gets an order and processes it if it can, returns an error if not
+    pub fn process_order(
+        mut self,
+        orders: Arc<RwLock<Vec<Order>>>,
+        dispenser_id: i32
+    ) -> Result<(), Error> {
+        if let Ok(order) = self.clone().get_order(orders) {
             println!(
                 "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
                 dispenser_id, self.id, order
@@ -57,7 +63,7 @@ mod tests {
         vec.push(order);
         let orders = std::sync::Arc::new(std::sync::RwLock::new(vec));
 
-        let result = coffee_maker.get_order(orders, 0).unwrap_err();
+        let result = coffee_maker.process_order(orders, 0).unwrap_err();
         let err_expected = crate::errors::Error::NotEnoughIngredient;
 
         assert_eq!(result, err_expected);
@@ -69,7 +75,7 @@ mod tests {
         let vec = Vec::new();
         let orders = std::sync::Arc::new(std::sync::RwLock::new(vec));
 
-        let result = coffee_maker.get_order(orders, 0).unwrap_err();
+        let result = coffee_maker.process_order(orders, 0).unwrap_err();
         let err_expected = crate::errors::Error::NoMoreOrders;
 
         assert_eq!(result, err_expected);

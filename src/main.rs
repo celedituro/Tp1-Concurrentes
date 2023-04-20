@@ -22,7 +22,7 @@ fn main() -> Result<(), Error> {
             let coffee_maker = coffee_makers[j as usize].clone();
             let handle = thread::spawn(move || {
                 println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING", i, j);
-                match coffee_maker.get_order(orders, i) {
+                match coffee_maker.process_order(orders, i) {
                     Ok(_) => println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING", i, j),
                     Err(error) => {
                         match error {
