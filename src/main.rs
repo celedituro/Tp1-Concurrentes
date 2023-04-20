@@ -21,11 +21,14 @@ fn main() -> Result<(), Error> {
 
         let handle = thread::spawn(move || {
             println!("[DISPENSER {:?}] STARTING", i);
-            {
-                match get_order(orders, container, i) {
-                    Ok(_) => println!("[DISPENSER {:?}] FINALIZING", i),
-                    Err(e) => println!("[DISPENSER {:?}] ABORTING FOR {:?}", i, e),
-                }
+            match get_order(orders, container, i) {
+                Ok(_) => println!("[DISPENSER {:?}] FINALIZING", i),
+                Err(error) => match error {
+                    Error::NotEnoughIngredient => {
+                        println!("[DISPENSER {:?}] THERE ARE NO MORE INGREDIENTS", i)
+                    }
+                    _ => println!("[DISPENSER {:?}] ABORTING FOR {:?}", i, error),
+                },
             }
         });
         dispensers.push(handle);

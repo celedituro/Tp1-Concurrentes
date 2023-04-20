@@ -5,10 +5,10 @@ use std::{
 
 use crate::{container::Container, errors::Error, orders::Order};
 
-const MAX_COFFEE: u32 = 100;
-const MAX_WATER: u32 = 100;
-const MAX_COCOA: u32 = 100;
-const MAX_FOAM: u32 = 100;
+const MAX_COFFEE: u32 = 5;
+const MAX_WATER: u32 = 5;
+const MAX_COCOA: u32 = 2;
+const MAX_FOAM: u32 = 2;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
