@@ -9,7 +9,7 @@ pub mod coffe_maker {
         mut containers: Containers,
         dispenser_id: i32,
     ) -> Result<(), Error> {
-        let order = if let Ok(mut orders) = orders.write() {
+        let order: Option<Order> = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
                 Some(orders.remove(0))
             } else {

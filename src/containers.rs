@@ -52,9 +52,10 @@ impl Containers {
         dispenser_id: i32,
     ) -> Result<(), Error> {
         if let Some(c) = self.all.get_mut(ingredient) {
-            {
-                let mut container = c.write().unwrap();
+            if let Ok(mut container) = c.write() {
                 container.update_quantity(value, dispenser_id)?;
+            } else {
+                return Err(Error::NotEnoughIngredient);
             }
         }
 

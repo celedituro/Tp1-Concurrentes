@@ -10,10 +10,11 @@ const DISPENSERS: i32 = 10;
 
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
-    let orders = Arc::new(RwLock::new(icontroller.get_orders()?));
+    let orders: Arc<RwLock<Vec<tp1::orders::Order>>> =
+        Arc::new(RwLock::new(icontroller.get_orders()?));
     let containers = Containers::new();
 
-    let mut dispensers = Vec::new();
+    let mut dispensers: Vec<thread::JoinHandle<()>> = Vec::new();
 
     for i in 0..DISPENSERS {
         let container = containers.clone();
