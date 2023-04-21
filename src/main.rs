@@ -22,7 +22,15 @@ fn main() -> Result<(), Error> {
         let orders = orders.clone();
         let handle = thread::spawn(move || {
             let coffee_maker = coffee_maker.clone();
-            coffee_maker.work(&orders).unwrap();
+            match coffee_maker.work(&orders) {
+                Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+                Err(err) => {
+                    println!(
+                        "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
+                        coffee_maker.id, err
+                    )
+                }
+            }
         });
         machines.push(handle);
     }

@@ -7,7 +7,7 @@ const DISPENSERS: i32 = 2;
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
-    id: i32,
+    pub id: i32,
     containers: Containers,
 }
 
