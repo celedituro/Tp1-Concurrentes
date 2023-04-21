@@ -94,8 +94,11 @@ impl CoffeeMaker {
 
         for handle in dispensers {
             match handle.join() {
-                Ok(_) => println!("FINALIZING"),
-                Err(_) => println!("ERROR WHEN JOINING"),
+                Ok(_) => println!("[DISPENSER] OF [COFFEE MAKER {:?}]: FINALIZING", self.id),
+                Err(_) => println!(
+                    "[DISPENSER] OF [COFFEE MAKER {:?}]: ERROR WHEN JOINING",
+                    self.id
+                ),
             }
         }
 

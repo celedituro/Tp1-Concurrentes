@@ -6,27 +6,33 @@
         "foam": 2
     },
     {
-        "coffee": 5,
-        "water": 10,
-        "cocoa": 2,
-        "foam": 2
+        "coffee": 6,
+        "water": 6,
+        "cocoa": 3,
+        "foam": 3
     },
     {
-        "coffee": 5,
-        "water": 10,
-        "cocoa": 2,
-        "foam": 2
+        "coffee": 7,
+        "water": 7,
+        "cocoa": 4,
+        "foam": 4
     },
     {
-        "coffee": 5,
-        "water": 10,
-        "cocoa": 2,
-        "foam": 2
+        "coffee": 8,
+        "water": 8,
+        "cocoa": 5,
+        "foam": 5
     },
     {
-        "coffee": 15,
-        "water": 20,
+        "coffee": 9,
+        "water": 9,
+        "cocoa": 6,
+        "foam": 6
+    },
+    {
+        "coffee": 10,
+        "water": 10,
         "cocoa": 7,
-        "foam": 8
+        "foam": 7
     }
 ]

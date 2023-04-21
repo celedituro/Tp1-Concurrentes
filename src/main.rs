@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use std::thread::{self, JoinHandle};
 
 use tp1::coffee_maker::CoffeeMaker;
 use tp1::errors::Error;
@@ -14,8 +15,23 @@ fn main() -> Result<(), Error> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
         coffee_makers.push(CoffeeMaker::new(j));
-        let coffee_maker = coffee_makers[j as usize].clone();
-        coffee_maker.work(&orders)?;
+    }
+
+    let mut machines: Vec<JoinHandle<()>> = Vec::new();
+    for coffee_maker in coffee_makers {
+        let orders = orders.clone();
+        let handle = thread::spawn(move || {
+            let coffee_maker = coffee_maker.clone();
+            coffee_maker.work(&orders).unwrap();
+        });
+        machines.push(handle);
+    }
+
+    for handle in machines {
+        match handle.join() {
+            Ok(_) => println!("[COFFEE MAKER]: FINALIZING"),
+            Err(_) => println!("[COFFEE MAKER]: ERROR WHEN JOINING"),
+        }
     }
 
     Ok(())
