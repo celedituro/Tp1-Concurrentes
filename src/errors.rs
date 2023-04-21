@@ -6,6 +6,5 @@ pub enum Error {
     NotEnoughIngredient,
     NoMoreOrders,
     CantHaveContainersLock,
-    CantHaveDoneLock,
     CantHaveOrdersLock,
 }

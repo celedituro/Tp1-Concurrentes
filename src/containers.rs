@@ -56,7 +56,11 @@ impl Containers {
             if let Ok(mut container) = c.write() {
                 container.update_quantity(value, dispenser_id, coffee_maker_id)?;
             } else {
-                return Err(Error::NotEnoughIngredient);
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK",
+                    dispenser_id, coffee_maker_id
+                );
+                return Err(Error::CantHaveContainersLock);
             }
         }
         Ok(())

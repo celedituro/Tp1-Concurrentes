@@ -21,15 +21,19 @@ impl CoffeeMaker {
     }
 
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
-    fn get_order(self, orders: Arc<RwLock<Vec<Order>>>) -> Result<Order, Error> {
+    fn get_order(self, orders: Arc<RwLock<Vec<Order>>>, dispenser_id: i32) -> Result<Order, Error> {
         let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
                 orders.remove(0)
             } else {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK",
+                    dispenser_id, self.id
+                );
                 return Err(Error::NoMoreOrders);
             }
         } else {
-            return Err(Error::NoMoreOrders);
+            return Err(Error::CantHaveOrdersLock);
         };
 
         Ok(order)
@@ -42,15 +46,16 @@ impl CoffeeMaker {
         dispenser_id: i32,
     ) -> Result<(), Error> {
         loop {
-            if let Ok(order) = self.clone().get_order(orders.clone()) {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
-                    dispenser_id, self.id, order
-                );
-                self.containers
-                    .get_ingredients(order, dispenser_id, self.id)?;
-            } else {
-                return Err(Error::NoMoreOrders);
+            match self.clone().get_order(orders.clone(), dispenser_id) {
+                Ok(order) => {
+                    println!(
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
+                        dispenser_id, self.id, order
+                    );
+                    self.containers
+                        .get_ingredients(order, dispenser_id, self.id)?;
+                }
+                Err(error) => return Err(error),
             }
         }
     }
@@ -80,6 +85,12 @@ impl CoffeeMaker {
                             }
                             Error::NoMoreOrders => {
                                 println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS", i, coffee_maker.clone().id);
+                            }
+                            Error::CantHaveContainersLock => {
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK", i, coffee_maker.clone().id);
+                            }
+                            Error::CantHaveOrdersLock => {
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK", i, coffee_maker.clone().id);
                             }
                             _ => println!(
                                 "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ABORTING FOR {:?}",
