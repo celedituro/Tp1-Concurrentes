@@ -3,7 +3,7 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: i32 = 3;
+const DISPENSERS: i32 = 2;
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
@@ -41,18 +41,18 @@ impl CoffeeMaker {
         orders: Arc<RwLock<Vec<Order>>>,
         dispenser_id: i32,
     ) -> Result<(), Error> {
-        if let Ok(order) = self.clone().get_order(orders) {
-            println!(
-                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
-                dispenser_id, self.id, order
-            );
-            self.containers
-                .get_ingredients(order, dispenser_id, self.id)?;
-        } else {
-            return Err(Error::NoMoreOrders);
+        loop {
+            if let Ok(order) = self.clone().get_order(orders.clone()) {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
+                    dispenser_id, self.id, order
+                );
+                self.containers
+                    .get_ingredients(order, dispenser_id, self.id)?;
+            } else {
+                return Err(Error::NoMoreOrders);
+            }
         }
-
-        Ok(())
     }
 
     // Makes the dispensers to work
