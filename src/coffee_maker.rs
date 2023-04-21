@@ -121,13 +121,15 @@ mod tests {
 
     #[test]
     fn test01_get_an_order_that_cant_be_completed() {
-        let coffee_maker = crate::coffee_maker::CoffeeMaker::new(1);
+        let coffee_maker = crate::coffee_maker::CoffeeMaker::new(0);
         let order = crate::orders::Order::new(110, 100, 100, 100);
         let mut vec = Vec::new();
         vec.push(order);
         let orders = std::sync::Arc::new(std::sync::RwLock::new(vec));
 
-        let result = coffee_maker.process_order(orders, 0).unwrap_err();
+        let result = coffee_maker
+            .process_order(orders, 0)
+            .expect_err("There is not enough ingredient to make the order");
         let err_expected = crate::errors::Error::NotEnoughIngredient;
 
         assert_eq!(result, err_expected);
@@ -135,11 +137,13 @@ mod tests {
 
     #[test]
     fn test02_get_an_order_when_there_are_no_orders() {
-        let coffee_maker = crate::coffee_maker::CoffeeMaker::new(1);
+        let coffee_maker = crate::coffee_maker::CoffeeMaker::new(0);
         let vec = Vec::new();
         let orders = std::sync::Arc::new(std::sync::RwLock::new(vec));
 
-        let result = coffee_maker.process_order(orders, 0).unwrap_err();
+        let result = coffee_maker
+            .process_order(orders, 0)
+            .expect_err("There are no more orders");
         let err_expected = crate::errors::Error::NoMoreOrders;
 
         assert_eq!(result, err_expected);

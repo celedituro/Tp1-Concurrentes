@@ -47,7 +47,9 @@ mod tests {
     #[test]
     fn test01_get_a_value_less_than_its_quantity_and_update_its_quantity() {
         let mut container = crate::container::Container::new("coffe".to_string(), 10);
-        container.update_quantity(5, 0, 0).unwrap();
+        container
+            .update_quantity(5, 0, 0)
+            .expect("There is not enough ingredient to make the order");
         let quantity_expected = 5;
         assert_eq!(container.quantity, quantity_expected);
     }
@@ -55,7 +57,9 @@ mod tests {
     #[test]
     fn test02_get_a_value_equal_than_its_quantity_and_update_its_quantity() {
         let mut container = crate::container::Container::new("coffe".to_string(), 10);
-        container.update_quantity(10, 0, 0).unwrap();
+        container
+            .update_quantity(10, 0, 0)
+            .expect("There is not enough ingredient to make the order");
         let quantity_expected = 0;
         assert_eq!(container.quantity, quantity_expected);
     }
@@ -63,7 +67,9 @@ mod tests {
     #[test]
     fn test03_get_a_value_greater_than_its_quantity_and_returns_an_error() {
         let mut container = crate::container::Container::new("coffe".to_string(), 10);
-        let error_got = container.update_quantity(15, 0, 0).unwrap_err();
+        let error_got = container
+            .update_quantity(15, 0, 0)
+            .expect_err("There is not enough ingredient to make the order");
         let error_expected = crate::errors::Error::NotEnoughIngredient;
         assert_eq!(error_got, error_expected);
     }
