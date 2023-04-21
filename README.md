@@ -24,4 +24,4 @@
 
 ## Resolución del problema
 
-Hay N máquinas de café con N dispensers y N ordenes cada una. Cada dispenser de cada máquina de café hace 1 orden y de forma simulatánea con el resto de los dispensers de la misma máquina. Para hacer 1 orden, los dispensers le piden los ingredientes a los contenedores de su máquina de café. El orden en que los dispensers piden café está preestablecido: café, agua, cacao y espuma.
+Hay N máquinas de café con N dispensers y 4 contenedores cada una. Los dispensers de una máquina de café va a hacer ordenes hasta que no haya más ordenes para procesar y de forma simulatánea con el resto de los dispensers de la misma máquina. Para hacer cada orden, los dispensers le piden los ingredientes a los contenedores de su máquina de café. El orden en que los dispensers piden café está preestablecido: café, agua, cacao y espuma.
