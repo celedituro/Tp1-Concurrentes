@@ -8,7 +8,7 @@ const DISPENSERS: i32 = 2;
 #[derive(Clone)]
 pub struct CoffeeMaker {
     pub id: i32,
-    containers: Containers,
+    pub containers: Containers,
 }
 
 impl CoffeeMaker {
@@ -117,35 +117,230 @@ impl CoffeeMaker {
     }
 }
 
+#[cfg(test)]
 mod tests {
+    use std::{
+        sync::{Arc, RwLock},
+        thread::{self, JoinHandle},
+    };
+
+    use crate::errors::Error;
+    #[cfg(test)]
+    use crate::{coffee_maker::CoffeeMaker, orders::Order};
 
     #[test]
     fn test01_get_an_order_that_cant_be_completed() {
-        let coffee_maker = crate::coffee_maker::CoffeeMaker::new(0);
-        let order = crate::orders::Order::new(110, 100, 100, 100);
+        let coffee_maker = CoffeeMaker::new(0);
+        let order = Order::new(110, 100, 100, 100);
         let mut vec = Vec::new();
         vec.push(order);
-        let orders = std::sync::Arc::new(std::sync::RwLock::new(vec));
+        let orders = Arc::new(RwLock::new(vec));
 
         let result = coffee_maker
             .process_order(orders, 0)
             .expect_err("There is not enough ingredient to make the order");
-        let err_expected = crate::errors::Error::NotEnoughIngredient;
+        let err_expected = Error::NotEnoughIngredient;
 
         assert_eq!(result, err_expected);
     }
 
     #[test]
     fn test02_get_an_order_when_there_are_no_orders() {
-        let coffee_maker = crate::coffee_maker::CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0);
         let vec = Vec::new();
-        let orders = std::sync::Arc::new(std::sync::RwLock::new(vec));
+        let orders = Arc::new(RwLock::new(vec));
 
         let result = coffee_maker
             .process_order(orders, 0)
             .expect_err("There are no more orders");
-        let err_expected = crate::errors::Error::NoMoreOrders;
+        let err_expected = Error::NoMoreOrders;
 
         assert_eq!(result, err_expected);
+    }
+
+    #[test]
+    fn test03_one_coffee_maker_with_two_dispensers_that_make_one_order() {
+        let mut list_orders = Vec::new();
+        let order = Order::new(10, 10, 5, 5);
+        list_orders.push(order);
+        let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
+
+        let mut dispensers: Vec<JoinHandle<()>> = Vec::new();
+        let coffee_maker = CoffeeMaker::new(0);
+        for i in 0..2 {
+            let orders = Arc::clone(&orders);
+            let coffee_maker = coffee_maker.clone();
+            let handle =
+                thread::spawn(
+                    move || match coffee_maker.clone().process_order(orders, i) {
+                        Ok(_) => println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
+                            i,
+                            coffee_maker.clone().id
+                        ),
+                        Err(err) => println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: {:?} ERROR",
+                            i, coffee_maker.id, err
+                        ),
+                    },
+                );
+            dispensers.push(handle);
+        }
+
+        for handle in dispensers {
+            handle.join().expect("Error when joining");
+        }
+
+        let coffee = coffee_maker.clone().containers.all["coffee"]
+            .read()
+            .expect("Cant have read lock of the coffee container")
+            .quantity;
+        assert_eq!(coffee, 90);
+        let water = coffee_maker.clone().containers.all["water"]
+            .read()
+            .expect("Cant have read lock of the water container")
+            .quantity;
+        assert_eq!(water, 90);
+        let cocoa = coffee_maker.clone().containers.all["cocoa"]
+            .read()
+            .expect("Cant have read lock of the cocoa container")
+            .quantity;
+        assert_eq!(cocoa, 95);
+        let foam = coffee_maker.containers.all["foam"]
+            .read()
+            .expect("Cant have read lock of foam coffee container")
+            .quantity;
+        assert_eq!(foam, 95);
+    }
+
+    #[test]
+    fn test04_one_coffee_maker_with_two_dispensers_that_make_five_orders() {
+        let mut list_orders = Vec::new();
+        let order = Order::new(10, 10, 5, 5);
+        for _ in 0..5 {
+            list_orders.push(order.clone());
+        }
+
+        let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
+        let mut dispensers: Vec<JoinHandle<()>> = Vec::new();
+        let coffee_maker = CoffeeMaker::new(0);
+        for i in 0..2 {
+            let orders = Arc::clone(&orders);
+            let coffee_maker = coffee_maker.clone();
+            let handle =
+                thread::spawn(
+                    move || match coffee_maker.clone().process_order(orders, i) {
+                        Ok(_) => println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
+                            i,
+                            coffee_maker.clone().id
+                        ),
+                        Err(err) => println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: {:?} ERROR",
+                            i, coffee_maker.id, err
+                        ),
+                    },
+                );
+            dispensers.push(handle);
+        }
+
+        for handle in dispensers {
+            handle.join().expect("Error when joining");
+        }
+
+        let coffee = coffee_maker.clone().containers.all["coffee"]
+            .read()
+            .expect("Cant have read lock of the coffee container")
+            .quantity;
+        assert_eq!(coffee, 50);
+        let water = coffee_maker.clone().containers.all["water"]
+            .read()
+            .expect("Cant have read lock of the water container")
+            .quantity;
+        assert_eq!(water, 50);
+        let cocoa = coffee_maker.clone().containers.all["cocoa"]
+            .read()
+            .expect("Cant have read lock of the cocoa container")
+            .quantity;
+        assert_eq!(cocoa, 75);
+        let foam = coffee_maker.containers.all["foam"]
+            .read()
+            .expect("Cant have read lock of foam coffee container")
+            .quantity;
+        assert_eq!(foam, 75);
+    }
+
+    #[test]
+    fn test05_two_coffee_makers_with_two_dispensers_that_make_three_orders() {
+        let mut list_orders = Vec::new();
+        let order = Order::new(10, 10, 5, 5);
+        for _ in 0..3 {
+            list_orders.push(order.clone());
+        }
+
+        let mut coffee_makers = Vec::new();
+        for j in 0..2 {
+            coffee_makers.push(CoffeeMaker::new(j));
+        }
+
+        let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
+        let mut machines: Vec<JoinHandle<()>> = Vec::new();
+        for coffee_maker in coffee_makers.clone() {
+            let orders = orders.clone();
+            let handle = thread::spawn(move || {
+                let coffee_maker = coffee_maker.clone();
+                match coffee_maker.work(&orders) {
+                    Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+                    Err(err) => {
+                        println!("[COFFEE MAKER {:?}]: {:?} ERROR", coffee_maker.id, err)
+                    }
+                }
+            });
+            machines.push(handle);
+        }
+
+        for handle in machines {
+            handle.join().expect("Error when joining");
+        }
+
+        let coffee_maker_0 = &coffee_makers[0];
+        let coffee_maker_1 = &coffee_makers[1];
+
+        let coffee_0 = coffee_maker_0.clone().containers.all["coffee"]
+            .read()
+            .expect("Coffee maker 0 cant have read lock of the coffee container")
+            .quantity;
+        let coffee_1 = coffee_maker_1.clone().containers.all["coffee"]
+            .read()
+            .expect("Coffee maker 1 cant have read lock of the coffee container")
+            .quantity;
+        assert_ne!(coffee_0, coffee_1);
+        let water_0 = coffee_maker_0.clone().containers.all["water"]
+            .read()
+            .expect("Coffee maker 0 cant have read lock of the water container")
+            .quantity;
+        let water_1 = coffee_maker_1.clone().containers.all["water"]
+            .read()
+            .expect("Coffee maker 1 cant have read lock of the water container")
+            .quantity;
+        assert_ne!(water_0, water_1);
+        let cocoa_0 = coffee_maker_0.clone().containers.all["cocoa"]
+            .read()
+            .expect("Coffee maker 0 cant have read lock of the cocoa container")
+            .quantity;
+        let cocoa_1 = coffee_maker_1.clone().containers.all["cocoa"]
+            .read()
+            .expect("Coffee maker 1 cant have read lock of the cocoa container")
+            .quantity;
+        assert_ne!(cocoa_0, cocoa_1);
+        let foam_0 = coffee_maker_0.clone().containers.all["foam"]
+            .read()
+            .expect("Coffee maker 0 cant have read lock of the foam container")
+            .quantity;
+        let foam_1 = coffee_maker_1.clone().containers.all["foam"]
+            .read()
+            .expect("Coffee maker 1 cant have read lock of the foam container")
+            .quantity;
+        assert_ne!(foam_0, foam_1);
     }
 }
