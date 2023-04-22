@@ -9,11 +9,14 @@ const MAX_COFFEE: u32 = 100;
 const MAX_WATER: u32 = 100;
 const MAX_COCOA: u32 = 100;
 const MAX_FOAM: u32 = 100;
+const MAX_GRAIN_COFFEE: u32 = 100;
+const MIN_COFFEE: u32 = 20;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
 const COCOA: &str = "cocoa";
 const FOAM: &str = "foam";
+const GRAIN_COFFEE: &str = "grain_coffee";
 
 #[derive(Debug, Clone)]
 pub struct Containers {
@@ -40,6 +43,13 @@ impl Containers {
             FOAM.to_owned(),
             Arc::new(RwLock::new(Container::new(FOAM.to_owned(), MAX_FOAM))),
         );
+        containers.insert(
+            GRAIN_COFFEE.to_owned(),
+            Arc::new(RwLock::new(Container::new(
+                GRAIN_COFFEE.to_owned(),
+                MAX_GRAIN_COFFEE,
+            ))),
+        );
 
         Containers { all: containers }
     }
@@ -51,16 +61,21 @@ impl Containers {
         value: u32,
         dispenser_id: i32,
         coffee_maker_id: i32,
+        more: bool,
     ) -> Result<(), Error> {
         if let Some(c) = self.all.get_mut(ingredient) {
             if let Ok(mut container) = c.write() {
-                container.update_quantity(value, dispenser_id, coffee_maker_id)?;
+                if !more {
+                    container.update_quantity(value, dispenser_id, coffee_maker_id)?;
+                } else {
+                    container.increment_quantity(value, dispenser_id, coffee_maker_id)?;
+                }
             } else {
                 println!(
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK",
                     dispenser_id, coffee_maker_id
                 );
-                return Err(Error::CantHaveContainersLock);
+                return Err(Error::CantWriteContainerLock);
             }
         }
         Ok(())
@@ -72,30 +87,94 @@ impl Containers {
         dispenser_id: i32,
         coffee_maker_id: i32,
     ) -> Result<(), Error> {
+        self.grind_coffee(dispenser_id, coffee_maker_id)?;
         self.get_ingredient(
             &COFFEE.to_owned(),
             order.coffee,
             dispenser_id,
             coffee_maker_id,
+            false,
         )?;
         self.get_ingredient(
             &WATER.to_owned(),
             order.water,
             dispenser_id,
             coffee_maker_id,
+            false,
         )?;
         self.get_ingredient(
             &COCOA.to_owned(),
             order.cocoa,
             dispenser_id,
             coffee_maker_id,
+            false,
         )?;
-        self.get_ingredient(&FOAM.to_owned(), order.foam, dispenser_id, coffee_maker_id)?;
+        self.get_ingredient(
+            &FOAM.to_owned(),
+            order.foam,
+            dispenser_id,
+            coffee_maker_id,
+            false,
+        )?;
 
         println!(
             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS",
             dispenser_id, coffee_maker_id
         );
+
+        Ok(())
+    }
+
+    // Returns false if there is enough coffee, returns true if not
+    pub fn has_to_grind_coffee(
+        self,
+        dispenser_id: i32,
+        coffee_maker_id: i32,
+    ) -> Result<bool, Error> {
+        let has_to_grind;
+        if let Ok(container) = self.all[&COFFEE.to_owned()].read() {
+            has_to_grind = if container.quantity >= MIN_COFFEE {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: DONT HAS TO GRIND COFFEE",
+                    dispenser_id, coffee_maker_id
+                );
+                false
+            } else {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: HAS TO GRIND COFFEE",
+                    dispenser_id, coffee_maker_id
+                );
+                true
+            };
+        } else {
+            return Err(Error::CantWriteContainerLock);
+        };
+
+        Ok(has_to_grind)
+    }
+
+    // Increments the quantity of coffee and decrements the quantity of grain coffee of when there is not enough coffee
+    pub fn grind_coffee(&mut self, dispenser_id: i32, coffee_maker_id: i32) -> Result<(), Error> {
+        if let Ok(grind) = self
+            .clone()
+            .has_to_grind_coffee(dispenser_id, coffee_maker_id)
+        {
+            if grind {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GRINDERING COFFEE",
+                    dispenser_id, coffee_maker_id
+                );
+                self.get_ingredient(
+                    &GRAIN_COFFEE.to_owned(),
+                    50,
+                    dispenser_id,
+                    coffee_maker_id,
+                    false,
+                )?;
+                self.get_ingredient(&COFFEE.to_owned(), 50, dispenser_id, coffee_maker_id, true)?;
+            }
+        };
+
         Ok(())
     }
 }

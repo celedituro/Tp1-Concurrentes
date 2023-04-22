@@ -34,6 +34,22 @@ impl Container {
 
         Ok(())
     }
+
+    // Increments the quantity of its ingredient if can, returns an error if not
+    pub fn increment_quantity(
+        &mut self,
+        value: u32,
+        dispenser_id: i32,
+        coffee_maker_id: i32,
+    ) -> Result<(), Error> {
+        println!(
+            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: INCREMENTING {:?} OF {:?} FROM {:?}",
+            dispenser_id, coffee_maker_id, value, self.name, self.quantity
+        );
+        self.quantity += value;
+
+        Ok(())
+    }
 }
 
 impl Default for Container {

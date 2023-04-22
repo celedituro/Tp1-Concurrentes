@@ -33,7 +33,7 @@ impl CoffeeMaker {
                 return Err(Error::NoMoreOrders);
             }
         } else {
-            return Err(Error::CantHaveOrdersLock);
+            return Err(Error::CantWriteOrdersLock);
         };
 
         Ok(order)
@@ -86,10 +86,10 @@ impl CoffeeMaker {
                             Error::NoMoreOrders => {
                                 println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS", i, coffee_maker.clone().id);
                             }
-                            Error::CantHaveContainersLock => {
+                            Error::CantWriteContainerLock => {
                                 println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK", i, coffee_maker.clone().id);
                             }
-                            Error::CantHaveOrdersLock => {
+                            Error::CantWriteOrdersLock => {
                                 println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK", i, coffee_maker.clone().id);
                             }
                             _ => println!(
@@ -218,5 +218,29 @@ mod tests {
             .expect("Cant have read lock of foam coffee container")
             .quantity;
         assert_eq!(foam, 75);
+    }
+
+    #[test]
+    fn test05_makes_ten_orders_and_the_quantity_of_its_containers_get_updated() {
+        let mut list_orders = Vec::new();
+        let order = Order::new(10, 10, 5, 5);
+        for _ in 0..10 {
+            list_orders.push(order.clone());
+        }
+        let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
+
+        let coffee_maker = CoffeeMaker::new(0);
+        coffee_maker.work(&orders).expect("Error when working");
+
+        let grain_coffee = coffee_maker.clone().containers.all["grain_coffee"]
+            .read()
+            .expect("Cant have read lock of the grains of coffee container")
+            .quantity;
+        assert_eq!(grain_coffee, 50);
+        let coffee = coffee_maker.clone().containers.all["coffee"]
+            .read()
+            .expect("Cant have read lock of the coffee container")
+            .quantity;
+        assert_eq!(coffee, 50);
     }
 }
