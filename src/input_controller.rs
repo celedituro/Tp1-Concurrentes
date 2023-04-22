@@ -16,7 +16,7 @@ impl InputController {
         Ok(InputController { filename: file })
     }
 
-    // Converts the orders from a json file to a vector of orders if it can, returns an error if not.
+    // Converts the orders from a json file to a vector of orders if it can, returns an error if not
     pub fn deserialize(self, orders: &str) -> Result<Vec<Order>, Error> {
         let result = match serde_json::from_str::<Vec<Order>>(orders) {
             Ok(orders) => orders,
@@ -26,7 +26,7 @@ impl InputController {
         Ok(result)
     }
 
-    // Reads the filename entered from user and returns a vector of orders if it can, returns an error if not.
+    // Reads the filename entered from user and returns a vector of orders if it can, returns an error if not
     pub fn get_orders(self) -> Result<Vec<Order>, Error> {
         let orders = match std::fs::read_to_string(self.clone().filename) {
             Ok(orders) => orders,
