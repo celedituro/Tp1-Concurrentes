@@ -1,3 +1,4 @@
+use crate::coffee_grinder::CoffeeGrinder;
 use crate::containers::Containers;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
@@ -9,14 +10,17 @@ const DISPENSERS: i32 = 2;
 pub struct CoffeeMaker {
     pub id: i32,
     pub containers: Containers,
+    pub grinder: CoffeeGrinder,
 }
 
 impl CoffeeMaker {
     // Creates a coffee maker with its container of ingredients and its id
     pub fn new(id_value: i32) -> CoffeeMaker {
+        let containers = Containers::new();
         CoffeeMaker {
             id: id_value,
-            containers: Containers::new(),
+            containers: containers.clone(),
+            grinder: CoffeeGrinder::new(containers, id_value),
         }
     }
 
@@ -52,6 +56,7 @@ impl CoffeeMaker {
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
                         dispenser_id, self.id, order
                     );
+                    self.clone().grinder.grind_coffee()?;
                     self.containers
                         .get_ingredients(order, dispenser_id, self.id)?;
                 }

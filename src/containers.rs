@@ -10,7 +10,6 @@ const MAX_WATER: u32 = 100;
 const MAX_COCOA: u32 = 100;
 const MAX_FOAM: u32 = 100;
 const MAX_GRAIN_COFFEE: u32 = 100;
-const MIN_COFFEE: u32 = 20;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
@@ -87,7 +86,6 @@ impl Containers {
         dispenser_id: i32,
         coffee_maker_id: i32,
     ) -> Result<(), Error> {
-        self.grind_coffee(dispenser_id, coffee_maker_id)?;
         self.get_ingredient(
             &COFFEE.to_owned(),
             order.coffee,
@@ -121,59 +119,6 @@ impl Containers {
             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS",
             dispenser_id, coffee_maker_id
         );
-
-        Ok(())
-    }
-
-    // Returns false if there is enough coffee, returns true if not
-    pub fn has_to_grind_coffee(
-        self,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
-    ) -> Result<bool, Error> {
-        let has_to_grind;
-        if let Ok(container) = self.all[&COFFEE.to_owned()].read() {
-            has_to_grind = if container.quantity >= MIN_COFFEE {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: DONT HAS TO GRIND COFFEE",
-                    dispenser_id, coffee_maker_id
-                );
-                false
-            } else {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: HAS TO GRIND COFFEE",
-                    dispenser_id, coffee_maker_id
-                );
-                true
-            };
-        } else {
-            return Err(Error::CantWriteContainerLock);
-        };
-
-        Ok(has_to_grind)
-    }
-
-    // Increments the quantity of coffee and decrements the quantity of grain coffee of when there is not enough coffee
-    pub fn grind_coffee(&mut self, dispenser_id: i32, coffee_maker_id: i32) -> Result<(), Error> {
-        if let Ok(grind) = self
-            .clone()
-            .has_to_grind_coffee(dispenser_id, coffee_maker_id)
-        {
-            if grind {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GRINDERING COFFEE",
-                    dispenser_id, coffee_maker_id
-                );
-                self.get_ingredient(
-                    &GRAIN_COFFEE.to_owned(),
-                    50,
-                    dispenser_id,
-                    coffee_maker_id,
-                    false,
-                )?;
-                self.get_ingredient(&COFFEE.to_owned(), 50, dispenser_id, coffee_maker_id, true)?;
-            }
-        };
 
         Ok(())
     }
