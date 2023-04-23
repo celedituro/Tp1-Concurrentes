@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use crate::{container::Container, errors::Error, orders::Order};
+use crate::{container::Container, errors::Error};
 
 const MAX_COFFEE: u32 = 100;
 const MAX_WATER: u32 = 100;
@@ -77,49 +77,6 @@ impl Containers {
                 return Err(Error::CantWriteContainerLock);
             }
         }
-        Ok(())
-    }
-
-    pub fn get_ingredients(
-        &mut self,
-        order: Order,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
-    ) -> Result<(), Error> {
-        self.get_ingredient(
-            &COFFEE.to_owned(),
-            order.coffee,
-            dispenser_id,
-            coffee_maker_id,
-            false,
-        )?;
-        self.get_ingredient(
-            &WATER.to_owned(),
-            order.water,
-            dispenser_id,
-            coffee_maker_id,
-            false,
-        )?;
-        self.get_ingredient(
-            &COCOA.to_owned(),
-            order.cocoa,
-            dispenser_id,
-            coffee_maker_id,
-            false,
-        )?;
-        self.get_ingredient(
-            &FOAM.to_owned(),
-            order.foam,
-            dispenser_id,
-            coffee_maker_id,
-            false,
-        )?;
-
-        println!(
-            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS",
-            dispenser_id, coffee_maker_id
-        );
-
         Ok(())
     }
 }

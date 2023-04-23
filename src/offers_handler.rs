@@ -1,5 +1,8 @@
-pub mod dispensers {
-    use crate::{coffee_maker::CoffeeMaker, errors::Error, orders::Order};
+pub mod offer_handler {
+    use crate::{
+        coffee_maker::CoffeeMaker, dispensers::dispenser::get_ingredients, errors::Error,
+        orders::Order,
+    };
     use std::sync::{Arc, RwLock};
 
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
@@ -39,8 +42,9 @@ pub mod dispensers {
                         dispenser_id, coffee_maker.id, order
                     );
                     coffee_maker.grinder.grind_coffee()?;
-                    coffee_maker.containers.get_ingredients(
+                    get_ingredients(
                         order,
+                        coffee_maker.containers.clone(),
                         dispenser_id,
                         coffee_maker.id,
                     )?;

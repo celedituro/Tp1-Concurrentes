@@ -1,6 +1,6 @@
 use crate::coffee_grinder::CoffeeGrinder;
 use crate::containers::Containers;
-use crate::dispenser::dispensers::process_order;
+use crate::offers_handler::offer_handler::process_order;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
@@ -89,8 +89,8 @@ impl CoffeeMaker {
 mod tests {
     use std::sync::{Arc, RwLock};
 
-    use crate::dispenser::dispensers::process_order;
     use crate::errors::Error;
+    use crate::offers_handler::offer_handler::process_order;
     use crate::{coffee_maker::CoffeeMaker, orders::Order};
 
     #[test]
