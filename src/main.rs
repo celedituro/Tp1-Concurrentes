@@ -20,16 +20,14 @@ fn main() -> Result<(), Error> {
     let mut machines: Vec<JoinHandle<()>> = Vec::new();
     for coffee_maker in coffee_makers {
         let orders = orders.clone();
-        let handle = thread::spawn(move || {
-            let coffee_maker = coffee_maker.clone();
-            match coffee_maker.work(&orders) {
-                Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
-                Err(err) => {
-                    println!(
-                        "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
-                        coffee_maker.id, err
-                    )
-                }
+        let coffee_maker_clone = coffee_maker.clone();
+        let handle = thread::spawn(move || match coffee_maker_clone.clone().work(&orders) {
+            Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+            Err(err) => {
+                println!(
+                    "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
+                    coffee_maker.id, err
+                )
             }
         });
         machines.push(handle);
@@ -72,8 +70,8 @@ mod tests {
         for coffee_maker in coffee_makers.clone() {
             let orders = orders.clone();
             let handle = thread::spawn(move || {
-                let coffee_maker = coffee_maker.clone();
-                match coffee_maker.work(&orders) {
+                let coffee_maker_clone = coffee_maker.clone();
+                match coffee_maker_clone.work(&orders) {
                     Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
                     Err(err) => {
                         println!("[COFFEE MAKER {:?}]: {:?} ERROR", coffee_maker.id, err)

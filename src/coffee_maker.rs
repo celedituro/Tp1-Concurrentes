@@ -1,5 +1,6 @@
 use crate::coffee_grinder::CoffeeGrinder;
 use crate::containers::Containers;
+use crate::dispenser::dispensers::process_order;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
@@ -24,82 +25,41 @@ impl CoffeeMaker {
         }
     }
 
-    // Gets an order from the list of orders if there are more orders to make, returns an error if not
-    fn get_order(self, orders: Arc<RwLock<Vec<Order>>>, dispenser_id: i32) -> Result<Order, Error> {
-        let order = if let Ok(mut orders) = orders.write() {
-            if !orders.is_empty() {
-                orders.remove(0)
-            } else {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK",
-                    dispenser_id, self.id
-                );
-                return Err(Error::NoMoreOrders);
-            }
-        } else {
-            return Err(Error::CantWriteOrdersLock);
-        };
-
-        Ok(order)
-    }
-
-    // Gets an order and processes it if it can, returns an error if not
-    pub fn process_order(
-        mut self,
-        orders: Arc<RwLock<Vec<Order>>>,
-        dispenser_id: i32,
-    ) -> Result<(), Error> {
-        loop {
-            match self.clone().get_order(orders.clone(), dispenser_id) {
-                Ok(order) => {
-                    println!(
-                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
-                        dispenser_id, self.id, order
-                    );
-                    self.clone().grinder.grind_coffee()?;
-                    self.containers
-                        .get_ingredients(order, dispenser_id, self.id)?;
-                }
-                Err(error) => return Err(error),
-            }
-        }
-    }
-
     // Makes the dispensers to work
-    pub fn work(&self, orders: &Arc<RwLock<Vec<Order>>>) -> Result<(), Error> {
+    pub fn work(self, orders: &Arc<RwLock<Vec<Order>>>) -> Result<(), Error> {
         let mut dispensers: Vec<JoinHandle<()>> = Vec::new();
         for i in 0..DISPENSERS {
             let orders = Arc::clone(orders);
-            let coffee_maker = self.clone();
+            let coffee_machine = self.clone();
             let handle = thread::spawn(move || {
                 println!(
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING",
                     i,
-                    coffee_maker.clone().id
+                    coffee_machine.clone().id
                 );
-                match coffee_maker.clone().process_order(orders, i) {
+                match process_order(orders, coffee_machine.clone(), i) {
                     Ok(_) => println!(
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
                         i,
-                        coffee_maker.clone().id
+                        coffee_machine.clone().id
                     ),
                     Err(error) => {
                         match error {
                             Error::NotEnoughIngredient => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE INGREDIENTS", i, coffee_maker.clone().id)
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE INGREDIENTS", i, coffee_machine.clone().id)
                             }
                             Error::NoMoreOrders => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS", i, coffee_maker.clone().id);
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS", i, coffee_machine.clone().id);
                             }
                             Error::CantWriteContainerLock => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK", i, coffee_maker.clone().id);
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK", i, coffee_machine.clone().id);
                             }
                             Error::CantWriteOrdersLock => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK", i, coffee_maker.clone().id);
+                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK", i, coffee_machine.clone().id);
                             }
                             _ => println!(
                                 "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ABORTING FOR {:?}",
-                                i, coffee_maker.id, error
+                                i, coffee_machine.id, error
                             ),
                         }
                     }
@@ -110,10 +70,13 @@ impl CoffeeMaker {
 
         for handle in dispensers {
             match handle.join() {
-                Ok(_) => println!("[DISPENSER] OF [COFFEE MAKER {:?}]: FINALIZING", self.id),
+                Ok(_) => println!(
+                    "[DISPENSER] OF [COFFEE MAKER {:?}]: FINALIZING",
+                    self.clone().id
+                ),
                 Err(_) => println!(
                     "[DISPENSER] OF [COFFEE MAKER {:?}]: ERROR WHEN JOINING",
-                    self.id
+                    self.clone().id
                 ),
             }
         }
@@ -126,6 +89,7 @@ impl CoffeeMaker {
 mod tests {
     use std::sync::{Arc, RwLock};
 
+    use crate::dispenser::dispensers::process_order;
     use crate::errors::Error;
     use crate::{coffee_maker::CoffeeMaker, orders::Order};
 
@@ -137,8 +101,7 @@ mod tests {
         vec.push(order);
         let orders = Arc::new(RwLock::new(vec));
 
-        let result = coffee_maker
-            .process_order(orders, 0)
+        let result = process_order(orders, coffee_maker, 0)
             .expect_err("There is not enough ingredient to make the order");
         let err_expected = Error::NotEnoughIngredient;
 
@@ -151,9 +114,7 @@ mod tests {
         let vec = Vec::new();
         let orders = Arc::new(RwLock::new(vec));
 
-        let result = coffee_maker
-            .process_order(orders, 0)
-            .expect_err("There are no more orders");
+        let result = process_order(orders, coffee_maker, 0).expect_err("There are no more orders");
         let err_expected = Error::NoMoreOrders;
 
         assert_eq!(result, err_expected);
@@ -167,7 +128,10 @@ mod tests {
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
         let coffee_maker = CoffeeMaker::new(0);
-        coffee_maker.work(&orders).expect("Error when working");
+        coffee_maker
+            .clone()
+            .work(&orders)
+            .expect("Error when working");
 
         let coffee = coffee_maker.clone().containers.all["coffee"]
             .read()
@@ -201,7 +165,10 @@ mod tests {
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
         let coffee_maker = CoffeeMaker::new(0);
-        coffee_maker.work(&orders).expect("Error when working");
+        coffee_maker
+            .clone()
+            .work(&orders)
+            .expect("Error when working");
 
         let coffee = coffee_maker.clone().containers.all["coffee"]
             .read()
@@ -235,7 +202,10 @@ mod tests {
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
         let coffee_maker = CoffeeMaker::new(0);
-        coffee_maker.work(&orders).expect("Error when working");
+        coffee_maker
+            .clone()
+            .work(&orders)
+            .expect("Error when working");
 
         let grain_coffee = coffee_maker.clone().containers.all["grain_coffee"]
             .read()
