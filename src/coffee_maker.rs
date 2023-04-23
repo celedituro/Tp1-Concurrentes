@@ -193,7 +193,7 @@ mod tests {
     }
 
     #[test]
-    fn test05_makes_ten_orders_and_the_quantity_of_its_containers_get_updated() {
+    fn test05_get_more_coffee_and_decrease_quantity_of_grain_coffee_container() {
         let mut list_orders = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         for _ in 0..10 {
@@ -217,5 +217,32 @@ mod tests {
             .expect("Cant have read lock of the coffee container")
             .quantity;
         assert_eq!(coffee, 50);
+    }
+
+    #[test]
+    fn test06_get_more_foam_and_decrease_quantity_of_milk_container() {
+        let mut list_orders = Vec::new();
+        let order = Order::new(5, 10, 5, 10);
+        for _ in 0..10 {
+            list_orders.push(order.clone());
+        }
+        let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
+
+        let coffee_maker = CoffeeMaker::new(0);
+        coffee_maker
+            .clone()
+            .work(&orders)
+            .expect("Error when working");
+
+        let milk = coffee_maker.clone().containers.all["milk"]
+            .read()
+            .expect("Cant have read lock of the milk container")
+            .quantity;
+        assert_eq!(milk, 50);
+        let foam: u32 = coffee_maker.clone().containers.all["foam"]
+            .read()
+            .expect("Cant have read lock of the foam container")
+            .quantity;
+        assert_eq!(foam, 50);
     }
 }

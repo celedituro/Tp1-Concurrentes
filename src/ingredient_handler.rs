@@ -5,7 +5,6 @@ use crate::errors::Error;
 
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
-
 const GRAIN_COFFEE: &str = "grain_coffee";
 const MILK: &str = "milk";
 

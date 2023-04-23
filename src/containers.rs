@@ -5,17 +5,14 @@ use std::{
 
 use crate::{container::Container, errors::Error};
 
-const MAX_COFFEE: u32 = 100;
-const MAX_WATER: u32 = 100;
-const MAX_COCOA: u32 = 100;
-const MAX_FOAM: u32 = 100;
-const MAX_GRAIN_COFFEE: u32 = 100;
+const MAX: u32 = 100;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
 const COCOA: &str = "cocoa";
 const FOAM: &str = "foam";
 const GRAIN_COFFEE: &str = "grain_coffee";
+const MILK: &str = "milk";
 
 #[derive(Debug, Clone)]
 pub struct Containers {
@@ -28,26 +25,27 @@ impl Containers {
         let mut containers = HashMap::new();
         containers.insert(
             COFFEE.to_owned(),
-            Arc::new(RwLock::new(Container::new(COFFEE.to_owned(), MAX_COFFEE))),
+            Arc::new(RwLock::new(Container::new(COFFEE.to_owned(), MAX))),
         );
         containers.insert(
             WATER.to_owned(),
-            Arc::new(RwLock::new(Container::new(WATER.to_owned(), MAX_WATER))),
+            Arc::new(RwLock::new(Container::new(WATER.to_owned(), MAX))),
         );
         containers.insert(
             COCOA.to_owned(),
-            Arc::new(RwLock::new(Container::new(COCOA.to_owned(), MAX_COCOA))),
+            Arc::new(RwLock::new(Container::new(COCOA.to_owned(), MAX))),
         );
         containers.insert(
             FOAM.to_owned(),
-            Arc::new(RwLock::new(Container::new(FOAM.to_owned(), MAX_FOAM))),
+            Arc::new(RwLock::new(Container::new(FOAM.to_owned(), MAX))),
         );
         containers.insert(
             GRAIN_COFFEE.to_owned(),
-            Arc::new(RwLock::new(Container::new(
-                GRAIN_COFFEE.to_owned(),
-                MAX_GRAIN_COFFEE,
-            ))),
+            Arc::new(RwLock::new(Container::new(GRAIN_COFFEE.to_owned(), MAX))),
+        );
+        containers.insert(
+            MILK.to_owned(),
+            Arc::new(RwLock::new(Container::new(MILK.to_owned(), MAX))),
         );
 
         Containers { all: containers }

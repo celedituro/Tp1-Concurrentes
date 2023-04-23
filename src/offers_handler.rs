@@ -6,7 +6,7 @@ pub mod offer_handler {
     use std::sync::{Arc, RwLock};
 
     const COFFEE: &str = "coffee";
-    //const FOAM: &str = "foam";
+    const FOAM: &str = "foam";
 
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
     fn get_order(
@@ -37,7 +37,7 @@ pub mod offer_handler {
     ) -> Result<(), Error> {
         println!("[DISPENSER {:?}]: GETTING MORE INGREDIENTS", dispenser_id);
         handler.get_more_ingredient(COFFEE.to_owned(), dispenser_id)?;
-        //handler.get_more_ingredient(FOAM.to_owned(), dispenser_id)?;
+        handler.get_more_ingredient(FOAM.to_owned(), dispenser_id)?;
 
         Ok(())
     }
