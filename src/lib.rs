@@ -1,9 +1,9 @@
-pub mod coffee_grinder;
 pub mod coffee_maker;
 pub mod container;
 pub mod containers;
 pub mod dispensers;
 pub mod errors;
+pub mod ingredient_handler;
 pub mod input_controller;
 pub mod offers_handler;
 pub mod orders;

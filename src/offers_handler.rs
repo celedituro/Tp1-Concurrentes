@@ -1,9 +1,12 @@
 pub mod offer_handler {
     use crate::{
         coffee_maker::CoffeeMaker, dispensers::dispenser::get_ingredients, errors::Error,
-        orders::Order,
+        ingredient_handler::IngredientHandler, orders::Order,
     };
     use std::sync::{Arc, RwLock};
+
+    const COFFEE: &str = "coffee";
+    //const FOAM: &str = "foam";
 
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
     fn get_order(
@@ -28,10 +31,21 @@ pub mod offer_handler {
         Ok(order)
     }
 
+    pub fn get_more_ingredients(
+        mut handler: IngredientHandler,
+        dispenser_id: i32,
+    ) -> Result<(), Error> {
+        println!("[DISPENSER {:?}]: GETTING MORE INGREDIENTS", dispenser_id);
+        handler.get_more_ingredient(COFFEE.to_owned(), dispenser_id)?;
+        //handler.get_more_ingredient(FOAM.to_owned(), dispenser_id)?;
+
+        Ok(())
+    }
+
     // Gets an order and processes it if it can, returns an error if not
     pub fn process_order(
         orders: Arc<RwLock<Vec<Order>>>,
-        mut coffee_maker: CoffeeMaker,
+        coffee_maker: CoffeeMaker,
         dispenser_id: i32,
     ) -> Result<(), Error> {
         loop {
@@ -41,7 +55,7 @@ pub mod offer_handler {
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
                         dispenser_id, coffee_maker.id, order
                     );
-                    coffee_maker.grinder.grind_coffee()?;
+                    get_more_ingredients(coffee_maker.handler.clone(), dispenser_id)?;
                     get_ingredients(
                         order,
                         coffee_maker.containers.clone(),

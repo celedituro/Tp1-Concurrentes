@@ -1,5 +1,5 @@
-use crate::coffee_grinder::CoffeeGrinder;
 use crate::containers::Containers;
+use crate::ingredient_handler::IngredientHandler;
 use crate::offers_handler::offer_handler::process_order;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
@@ -11,7 +11,7 @@ const DISPENSERS: i32 = 2;
 pub struct CoffeeMaker {
     pub id: i32,
     pub containers: Containers,
-    pub grinder: CoffeeGrinder,
+    pub handler: IngredientHandler,
 }
 
 impl CoffeeMaker {
@@ -21,7 +21,7 @@ impl CoffeeMaker {
         CoffeeMaker {
             id: id_value,
             containers: containers.clone(),
-            grinder: CoffeeGrinder::new(containers, id_value),
+            handler: IngredientHandler::new(containers, id_value),
         }
     }
 
