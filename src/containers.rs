@@ -5,8 +5,6 @@ use std::{
 
 use crate::{container::Container, errors::Error};
 
-const MAX: u32 = 100;
-
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
 const COCOA: &str = "cocoa";
@@ -21,31 +19,34 @@ pub struct Containers {
 
 impl Containers {
     // Creates a hashmap of containers of ingredients
-    pub fn new() -> Containers {
+    pub fn new(max_value: u32) -> Containers {
         let mut containers = HashMap::new();
         containers.insert(
             COFFEE.to_owned(),
-            Arc::new(RwLock::new(Container::new(COFFEE.to_owned(), MAX))),
+            Arc::new(RwLock::new(Container::new(COFFEE.to_owned(), max_value))),
         );
         containers.insert(
             WATER.to_owned(),
-            Arc::new(RwLock::new(Container::new(WATER.to_owned(), MAX))),
+            Arc::new(RwLock::new(Container::new(WATER.to_owned(), max_value))),
         );
         containers.insert(
             COCOA.to_owned(),
-            Arc::new(RwLock::new(Container::new(COCOA.to_owned(), MAX))),
+            Arc::new(RwLock::new(Container::new(COCOA.to_owned(), max_value))),
         );
         containers.insert(
             FOAM.to_owned(),
-            Arc::new(RwLock::new(Container::new(FOAM.to_owned(), MAX))),
+            Arc::new(RwLock::new(Container::new(FOAM.to_owned(), max_value))),
         );
         containers.insert(
             GRAIN_COFFEE.to_owned(),
-            Arc::new(RwLock::new(Container::new(GRAIN_COFFEE.to_owned(), MAX))),
+            Arc::new(RwLock::new(Container::new(
+                GRAIN_COFFEE.to_owned(),
+                max_value,
+            ))),
         );
         containers.insert(
             MILK.to_owned(),
-            Arc::new(RwLock::new(Container::new(MILK.to_owned(), MAX))),
+            Arc::new(RwLock::new(Container::new(MILK.to_owned(), max_value))),
         );
 
         Containers { all: containers }
@@ -77,6 +78,6 @@ impl Containers {
 
 impl Default for Containers {
     fn default() -> Self {
-        Self::new()
+        Self::new(100)
     }
 }

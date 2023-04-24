@@ -9,22 +9,38 @@ const GRAIN_COFFEE: &str = "grain_coffee";
 const MILK: &str = "milk";
 const WATER: &str = "water";
 
-const MIN_VALUE: u32 = 20;
-const VALUE: u32 = 50;
-
 #[derive(Clone)]
 pub struct Stocker {
     coffee_maker_id: i32,
     containers: Containers,
-    values: HashMap<String, String>,
+    values: HashMap<String, (String, u32, u32)>,
 }
 
 impl Stocker {
     // Creates an ingredient stocker for replenishing ingredients
-    pub fn new(containers_list: Containers, id: i32) -> Stocker {
+    pub fn new(
+        containers_list: Containers,
+        id: i32,
+        min_value_to_replanish: u32,
+        replanish_value: u32,
+    ) -> Stocker {
         let mut ingredients = HashMap::new();
-        ingredients.insert(COFFEE.to_owned(), GRAIN_COFFEE.to_owned());
-        ingredients.insert(FOAM.to_owned(), MILK.to_owned());
+        ingredients.insert(
+            COFFEE.to_owned(),
+            (
+                GRAIN_COFFEE.to_owned(),
+                min_value_to_replanish,
+                replanish_value,
+            ),
+        );
+        ingredients.insert(
+            FOAM.to_owned(),
+            (MILK.to_owned(), min_value_to_replanish, replanish_value),
+        );
+        ingredients.insert(
+            WATER.to_owned(),
+            ("".to_owned(), min_value_to_replanish, replanish_value),
+        );
 
         Stocker {
             coffee_maker_id: id,
@@ -47,7 +63,7 @@ impl Stocker {
     fn has_to_replenish(&self, ingredient: &String, dispenser_id: i32) -> Result<bool, Error> {
         let has_to_get_more;
         if let Ok(container) = self.containers.all[ingredient].read() {
-            has_to_get_more = container.quantity < MIN_VALUE;
+            has_to_get_more = container.quantity < self.values[ingredient].1;
             println!(
                 "[DISPENSER {:?}]: ¿HAS TO GET MORE {:?}? {:?}",
                 dispenser_id, ingredient, has_to_get_more
@@ -70,7 +86,7 @@ impl Stocker {
                 );
                 self.containers.get_ingredient(
                     &ingredient,
-                    VALUE,
+                    self.values[&ingredient].2,
                     dispenser_id,
                     self.coffee_maker_id,
                     true,
@@ -78,11 +94,11 @@ impl Stocker {
                 if ingredient != WATER {
                     println!(
                         "[DISPENSER {:?}]: GETTING MORE {:?}",
-                        dispenser_id, self.values[&ingredient]
+                        dispenser_id, self.values[&ingredient].0
                     );
                     self.containers.get_ingredient(
-                        &self.values[&ingredient],
-                        VALUE,
+                        &self.values[&ingredient].0,
+                        self.values[&ingredient].2,
                         dispenser_id,
                         self.coffee_maker_id,
                         false,
@@ -94,5 +110,106 @@ impl Stocker {
         };
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{containers::Containers, errors::Error};
+
+    use super::Stocker;
+
+    #[test]
+    fn test01_quantity_is_ten_and_min_value_to_replanish_is_twenty_so_has_to_replanish() {
+        let stocker = Stocker::new(Containers::new(10), 0, 20, 50);
+        let coffee_got = stocker
+            .has_to_replenish(&"coffee".to_string(), 0)
+            .expect("Error");
+        let foam_got = stocker
+            .has_to_replenish(&"foam".to_string(), 0)
+            .expect("Error");
+        let water_got = stocker
+            .has_to_replenish(&"water".to_string(), 0)
+            .expect("Error");
+
+        assert_eq!(coffee_got, true);
+        assert_eq!(foam_got, true);
+        assert_eq!(water_got, true);
+    }
+
+    #[test]
+    fn test02_quantity_is_thirty_and_min_value_to_replenish_is_twenty_so_has_not_to_replanish() {
+        let stocker = Stocker::new(Containers::new(30), 0, 20, 50);
+        let coffee_got = stocker
+            .has_to_replenish(&"coffee".to_string(), 0)
+            .expect("Error");
+        let foam_got = stocker
+            .has_to_replenish(&"foam".to_string(), 0)
+            .expect("Error");
+        let water_got = stocker
+            .has_to_replenish(&"water".to_string(), 0)
+            .expect("Error");
+
+        assert_eq!(coffee_got, false);
+        assert_eq!(foam_got, false);
+        assert_eq!(water_got, false);
+    }
+
+    #[test]
+    fn test03_quantity_is_ten_and_min_value_to_replanish_is_twenty_so_replanish_them() {
+        let mut stocker = Stocker::new(Containers::new(10), 0, 20, 10);
+        stocker
+            .replenish_ingredients(0)
+            .expect("Error when replenishing ingredients");
+        let coffee_got = stocker.containers.all["coffee"]
+            .read()
+            .expect("Error when reading coffee container")
+            .quantity;
+        let foam_got = stocker.containers.all["foam"]
+            .read()
+            .expect("Error when reading coffee container")
+            .quantity;
+        let water_got = stocker.containers.all["water"]
+            .read()
+            .expect("Error when reading coffee container")
+            .quantity;
+
+        assert_eq!(coffee_got, 20);
+        assert_eq!(foam_got, 20);
+        assert_eq!(water_got, 20);
+    }
+
+    #[test]
+    fn test04_quantity_is_thirty_and_min_value_to_replanish_is_twenty_so_dont_replanish_them() {
+        let mut stocker = Stocker::new(Containers::new(30), 0, 20, 10);
+        stocker
+            .replenish_ingredients(0)
+            .expect("Error when replenishing ingredients");
+        let coffee_got = stocker.containers.all["coffee"]
+            .read()
+            .expect("Error when reading coffee container")
+            .quantity;
+        let foam_got = stocker.containers.all["foam"]
+            .read()
+            .expect("Error when reading coffee container")
+            .quantity;
+        let water_got = stocker.containers.all["water"]
+            .read()
+            .expect("Error when reading coffee container")
+            .quantity;
+
+        assert_eq!(coffee_got, 30);
+        assert_eq!(foam_got, 30);
+        assert_eq!(water_got, 30);
+    }
+
+    #[test]
+    fn test05_has_to_replanish_but_dont_have_enough_resource_so_dont_replanish_them() {
+        let mut stocker = Stocker::new(Containers::new(10), 0, 30, 50);
+        let err_got = stocker
+            .replenish_ingredients(0)
+            .expect_err("Dont have enough ingredient");
+        let err_expected = Error::NotEnoughIngredient;
+        assert_eq!(err_got, err_expected);
     }
 }

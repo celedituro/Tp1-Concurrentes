@@ -6,6 +6,8 @@ use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 
 const DISPENSERS: i32 = 2;
+const MIN_VALUE_TO_REPLENISH: u32 = 20;
+const REPLENISH_VALUE: u32 = 50;
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
@@ -16,12 +18,17 @@ pub struct CoffeeMaker {
 
 impl CoffeeMaker {
     // Creates a coffee maker with its container of ingredients and its id
-    pub fn new(id_value: i32) -> CoffeeMaker {
-        let containers = Containers::new();
+    pub fn new(id_value: i32, max_value: u32) -> CoffeeMaker {
+        let containers = Containers::new(max_value);
         CoffeeMaker {
             id: id_value,
             containers: containers.clone(),
-            handler: Stocker::new(containers, id_value),
+            handler: Stocker::new(
+                containers,
+                id_value,
+                MIN_VALUE_TO_REPLENISH,
+                REPLENISH_VALUE,
+            ),
         }
     }
 
@@ -95,7 +102,7 @@ mod tests {
 
     #[test]
     fn test01_get_an_order_that_cant_be_completed() {
-        let coffee_maker = CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0, 100);
         let order = Order::new(110, 100, 100, 100);
         let mut vec = Vec::new();
         vec.push(order);
@@ -110,7 +117,7 @@ mod tests {
 
     #[test]
     fn test02_get_an_order_when_there_are_no_orders() {
-        let coffee_maker = CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0, 100);
         let vec = Vec::new();
         let orders = Arc::new(RwLock::new(vec));
 
@@ -127,7 +134,7 @@ mod tests {
         list_orders.push(order);
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
-        let coffee_maker = CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
             .work(&orders)
@@ -164,7 +171,7 @@ mod tests {
         }
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
-        let coffee_maker = CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
             .work(&orders)
@@ -201,7 +208,7 @@ mod tests {
         }
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
-        let coffee_maker = CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
             .work(&orders)
@@ -228,7 +235,7 @@ mod tests {
         }
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
 
-        let coffee_maker = CoffeeMaker::new(0);
+        let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
             .work(&orders)

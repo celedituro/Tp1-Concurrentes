@@ -14,7 +14,7 @@ fn main() -> Result<(), Error> {
 
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
-        coffee_makers.push(CoffeeMaker::new(j));
+        coffee_makers.push(CoffeeMaker::new(j, 100));
     }
 
     let mut machines: Vec<JoinHandle<()>> = Vec::new();
@@ -62,7 +62,7 @@ mod tests {
 
         let mut coffee_makers = Vec::new();
         for j in 0..2 {
-            coffee_makers.push(CoffeeMaker::new(j));
+            coffee_makers.push(CoffeeMaker::new(j, 100));
         }
 
         let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
