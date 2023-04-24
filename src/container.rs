@@ -79,7 +79,7 @@ mod tests {
     use crate::{container::Container, errors::Error};
 
     #[test]
-    fn test01_get_a_value_less_than_its_quantity_and_update_its_quantity() {
+    fn test01_get_a_value_lower_than_its_quantity_and_update_its_quantity() {
         let mut container = Container::new("coffe".to_string(), 10);
         container
             .dispense(5, 0, 0)
@@ -106,5 +106,35 @@ mod tests {
             .expect_err("There is not enough ingredient to make the order");
         let error_expected = Error::NotEnoughIngredient;
         assert_eq!(error_got, error_expected);
+    }
+
+    #[test]
+    fn test04_increase_its_quantity_when_replenishing() {
+        let mut container = Container::new("coffe".to_string(), 10);
+        container
+            .replenish(5, 0, 0)
+            .expect("Error when replinishing");
+        let quantity_expected = 15;
+        assert_eq!(container.quantity, quantity_expected);
+    }
+
+    #[test]
+    fn test05_decrease_its_quantity_when_flag_is_not_activated() {
+        let mut container = Container::new("coffe".to_string(), 10);
+        container
+            .update(5, 0, 0, false)
+            .expect("Error when replinishing");
+        let quantity_expected = 5;
+        assert_eq!(container.quantity, quantity_expected);
+    }
+
+    #[test]
+    fn test06_increase_its_quantity_when_flag_is_activated() {
+        let mut container = Container::new("coffe".to_string(), 10);
+        container
+            .update(5, 0, 0, true)
+            .expect("Error when replinishing");
+        let quantity_expected = 15;
+        assert_eq!(container.quantity, quantity_expected);
     }
 }
