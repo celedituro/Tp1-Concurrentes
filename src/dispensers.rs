@@ -6,7 +6,7 @@ pub mod dispenser {
     const COCOA: &str = "cocoa";
     const FOAM: &str = "foam";
 
-    pub fn get_ingredients(
+    pub fn make_order(
         order: Order,
         mut containers: Containers,
         dispenser_id: i32,

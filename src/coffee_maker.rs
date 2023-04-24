@@ -1,6 +1,6 @@
 use crate::containers::Containers;
-use crate::ingredient_handler::IngredientHandler;
-use crate::offers_handler::offer_handler::process_order;
+use crate::orders_handler::order_handler::process_order;
+use crate::stocker::Stocker;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
@@ -11,7 +11,7 @@ const DISPENSERS: i32 = 2;
 pub struct CoffeeMaker {
     pub id: i32,
     pub containers: Containers,
-    pub handler: IngredientHandler,
+    pub handler: Stocker,
 }
 
 impl CoffeeMaker {
@@ -21,7 +21,7 @@ impl CoffeeMaker {
         CoffeeMaker {
             id: id_value,
             containers: containers.clone(),
-            handler: IngredientHandler::new(containers, id_value),
+            handler: Stocker::new(containers, id_value),
         }
     }
 
@@ -90,7 +90,7 @@ mod tests {
     use std::sync::{Arc, RwLock};
 
     use crate::errors::Error;
-    use crate::offers_handler::offer_handler::process_order;
+    use crate::orders_handler::order_handler::process_order;
     use crate::{coffee_maker::CoffeeMaker, orders::Order};
 
     #[test]

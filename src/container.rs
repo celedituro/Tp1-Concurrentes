@@ -15,8 +15,24 @@ impl Container {
         }
     }
 
+    pub fn update(
+        &mut self,
+        value: u32,
+        dispenser_id: i32,
+        coffee_maker_id: i32,
+        more: bool,
+    ) -> Result<(), Error> {
+        if !more {
+            self.dispense(value, dispenser_id, coffee_maker_id)?;
+        } else {
+            self.replenish(value, dispenser_id, coffee_maker_id)?;
+        }
+
+        Ok(())
+    }
+
     // Updates the quantity of its ingredient if can, returns an error if not
-    pub fn update_quantity(
+    pub fn dispense(
         &mut self,
         value: u32,
         dispenser_id: i32,
@@ -36,7 +52,7 @@ impl Container {
     }
 
     // Increments the quantity of its ingredient if can, returns an error if not
-    pub fn increment_quantity(
+    pub fn replenish(
         &mut self,
         value: u32,
         dispenser_id: i32,
@@ -66,7 +82,7 @@ mod tests {
     fn test01_get_a_value_less_than_its_quantity_and_update_its_quantity() {
         let mut container = Container::new("coffe".to_string(), 10);
         container
-            .update_quantity(5, 0, 0)
+            .dispense(5, 0, 0)
             .expect("There is not enough ingredient to make the order");
         let quantity_expected = 5;
         assert_eq!(container.quantity, quantity_expected);
@@ -76,7 +92,7 @@ mod tests {
     fn test02_get_a_value_equal_than_its_quantity_and_update_its_quantity() {
         let mut container = Container::new("coffe".to_string(), 10);
         container
-            .update_quantity(10, 0, 0)
+            .dispense(10, 0, 0)
             .expect("There is not enough ingredient to make the order");
         let quantity_expected = 0;
         assert_eq!(container.quantity, quantity_expected);
@@ -86,7 +102,7 @@ mod tests {
     fn test03_get_a_value_greater_than_its_quantity_and_returns_an_error() {
         let mut container = Container::new("coffe".to_string(), 10);
         let error_got = container
-            .update_quantity(15, 0, 0)
+            .dispense(15, 0, 0)
             .expect_err("There is not enough ingredient to make the order");
         let error_expected = Error::NotEnoughIngredient;
         assert_eq!(error_got, error_expected);

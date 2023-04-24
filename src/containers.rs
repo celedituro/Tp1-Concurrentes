@@ -62,11 +62,7 @@ impl Containers {
     ) -> Result<(), Error> {
         if let Some(c) = self.all.get_mut(ingredient) {
             if let Ok(mut container) = c.write() {
-                if !more {
-                    container.update_quantity(value, dispenser_id, coffee_maker_id)?;
-                } else {
-                    container.increment_quantity(value, dispenser_id, coffee_maker_id)?;
-                }
+                container.update(value, dispenser_id, coffee_maker_id, more)?;
             } else {
                 println!(
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK",
