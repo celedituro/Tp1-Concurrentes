@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["coffee_maker",""],["container",""],["containers",""],["dispensers",""],["errors",""],["ingredient_handler",""],["input_controller",""],["orders",""],["orders_handler",""]]};
+window.SIDEBAR_ITEMS = {"mod":[["coffee_maker",""],["container",""],["containers",""],["dispensers",""],["errors",""],["ingredient_handler",""],["input_controller",""],["orders",""],["orders_handler",""],["stats_presentator",""]]};

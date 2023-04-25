@@ -5,7 +5,7 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: i32 = 2;
+const DISPENSERS: i32 = 4;
 const MIN_VALUE_TO_REPLENISH: u32 = 20;
 const REPLENISH_VALUE: u32 = 50;
 
