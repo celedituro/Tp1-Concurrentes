@@ -10,20 +10,20 @@ const MILK: &str = "milk";
 const WATER: &str = "water";
 
 #[derive(Clone)]
-pub struct Stocker {
+pub struct IHandler {
     coffee_maker_id: i32,
     containers: Containers,
     values: HashMap<String, (String, u32, u32)>,
 }
 
-impl Stocker {
-    // Creates an ingredient stocker for replenishing ingredients
+impl IHandler {
+    // Creates an ingredient IHandler for replenishing ingredients
     pub fn new(
         containers_list: Containers,
         id: i32,
         min_value_to_replanish: u32,
         replanish_value: u32,
-    ) -> Stocker {
+    ) -> IHandler {
         let mut ingredients = HashMap::new();
         ingredients.insert(
             COFFEE.to_owned(),
@@ -42,7 +42,7 @@ impl Stocker {
             ("".to_owned(), min_value_to_replanish, replanish_value),
         );
 
-        Stocker {
+        IHandler {
             coffee_maker_id: id,
             containers: containers_list,
             values: ingredients,
@@ -117,18 +117,18 @@ impl Stocker {
 mod tests {
     use crate::{containers::Containers, errors::Error};
 
-    use super::Stocker;
+    use super::IHandler;
 
     #[test]
     fn test01_quantity_is_ten_and_min_value_to_replanish_is_twenty_so_has_to_replanish() {
-        let stocker = Stocker::new(Containers::new(10), 0, 20, 50);
-        let coffee_got = stocker
+        let handler = IHandler::new(Containers::new(10), 0, 20, 50);
+        let coffee_got = handler
             .has_to_replenish(&"coffee".to_string(), 0)
             .expect("Error");
-        let foam_got = stocker
+        let foam_got = handler
             .has_to_replenish(&"foam".to_string(), 0)
             .expect("Error");
-        let water_got = stocker
+        let water_got = handler
             .has_to_replenish(&"water".to_string(), 0)
             .expect("Error");
 
@@ -139,14 +139,14 @@ mod tests {
 
     #[test]
     fn test02_quantity_is_thirty_and_min_value_to_replenish_is_twenty_so_has_not_to_replanish() {
-        let stocker = Stocker::new(Containers::new(30), 0, 20, 50);
-        let coffee_got = stocker
+        let handler = IHandler::new(Containers::new(30), 0, 20, 50);
+        let coffee_got = handler
             .has_to_replenish(&"coffee".to_string(), 0)
             .expect("Error");
-        let foam_got = stocker
+        let foam_got = handler
             .has_to_replenish(&"foam".to_string(), 0)
             .expect("Error");
-        let water_got = stocker
+        let water_got = handler
             .has_to_replenish(&"water".to_string(), 0)
             .expect("Error");
 
@@ -157,19 +157,19 @@ mod tests {
 
     #[test]
     fn test03_quantity_is_ten_and_min_value_to_replanish_is_twenty_so_replanish_them() {
-        let mut stocker = Stocker::new(Containers::new(10), 0, 20, 10);
-        stocker
+        let mut handler = IHandler::new(Containers::new(10), 0, 20, 10);
+        handler
             .replenish_ingredients(0)
             .expect("Error when replenishing ingredients");
-        let coffee_got = stocker.containers.all["coffee"]
+        let coffee_got = handler.containers.all["coffee"]
             .read()
             .expect("Error when reading coffee container")
             .quantity;
-        let foam_got = stocker.containers.all["foam"]
+        let foam_got = handler.containers.all["foam"]
             .read()
             .expect("Error when reading coffee container")
             .quantity;
-        let water_got = stocker.containers.all["water"]
+        let water_got = handler.containers.all["water"]
             .read()
             .expect("Error when reading coffee container")
             .quantity;
@@ -181,19 +181,19 @@ mod tests {
 
     #[test]
     fn test04_quantity_is_thirty_and_min_value_to_replanish_is_twenty_so_dont_replanish_them() {
-        let mut stocker = Stocker::new(Containers::new(30), 0, 20, 10);
-        stocker
+        let mut handler = IHandler::new(Containers::new(30), 0, 20, 10);
+        handler
             .replenish_ingredients(0)
             .expect("Error when replenishing ingredients");
-        let coffee_got = stocker.containers.all["coffee"]
+        let coffee_got = handler.containers.all["coffee"]
             .read()
             .expect("Error when reading coffee container")
             .quantity;
-        let foam_got = stocker.containers.all["foam"]
+        let foam_got = handler.containers.all["foam"]
             .read()
             .expect("Error when reading coffee container")
             .quantity;
-        let water_got = stocker.containers.all["water"]
+        let water_got = handler.containers.all["water"]
             .read()
             .expect("Error when reading coffee container")
             .quantity;
@@ -205,8 +205,8 @@ mod tests {
 
     #[test]
     fn test05_has_to_replanish_but_dont_have_enough_resource_so_dont_replanish_them() {
-        let mut stocker = Stocker::new(Containers::new(10), 0, 30, 50);
-        let err_got = stocker
+        let mut handler = IHandler::new(Containers::new(10), 0, 30, 50);
+        let err_got = handler
             .replenish_ingredients(0)
             .expect_err("Dont have enough ingredient");
         let err_expected = Error::NotEnoughIngredient;

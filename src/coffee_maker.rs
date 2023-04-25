@@ -1,6 +1,6 @@
 use crate::containers::Containers;
+use crate::ingredient_handler::IHandler;
 use crate::orders_handler::order_handler::process_order;
-use crate::stocker::Stocker;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
@@ -13,7 +13,7 @@ const REPLENISH_VALUE: u32 = 50;
 pub struct CoffeeMaker {
     pub id: i32,
     pub containers: Containers,
-    pub handler: Stocker,
+    pub handler: IHandler,
 }
 
 impl CoffeeMaker {
@@ -23,7 +23,7 @@ impl CoffeeMaker {
         CoffeeMaker {
             id: id_value,
             containers: containers.clone(),
-            handler: Stocker::new(
+            handler: IHandler::new(
                 containers,
                 id_value,
                 MIN_VALUE_TO_REPLENISH,
