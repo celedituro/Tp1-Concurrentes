@@ -12,8 +12,7 @@ const INITIAL_QUANTITY: u32 = 100;
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
     let orders_list = icontroller.get_orders()?;
-    let orders = Arc::new(Mutex::new(orders_list.clone()));
-    let condvar = Arc::new(Condvar::new());
+    let orders = Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
     let total_num_orders = orders_list.len() as u32;
 
     let mut coffee_makers = Vec::new();
@@ -24,36 +23,30 @@ fn main() -> Result<(), Error> {
     let mut machines: Vec<JoinHandle<()>> = Vec::new();
     for coffee_maker in coffee_makers.clone() {
         let orders = orders.clone();
-        let condvar = condvar.clone();
         let coffee_maker_clone = coffee_maker.clone();
-        let handle =
-            thread::spawn(
-                move || match coffee_maker_clone.clone().work(&orders, condvar) {
-                    Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
-                    Err(err) => {
-                        println!(
-                            "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
-                            coffee_maker.id, err
-                        )
-                    }
-                },
-            );
+        let handle = thread::spawn(move || match coffee_maker_clone.clone().work(&orders) {
+            Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+            Err(err) => {
+                println!(
+                    "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
+                    coffee_maker.id, err
+                )
+            }
+        });
         machines.push(handle);
     }
 
-    if let Ok(mut orders) = orders.lock() {
-        println!("PRESENTING STATS WITH {:?}", orders.len() as u32);
-        println!("TOTAL ORDERS afuera {:?}", total_num_orders);
-        while (orders.len() as u32) > 4 {
-            println!("TOTAL ORDERS adentro {:?}", orders.len());
-            orders = condvar.wait(orders).unwrap();
+    let (orders_lock, condvar) = &*orders;
+    if let Ok(orders) = orders_lock.lock() {
+        if let Ok(orders) = condvar.wait_while(orders, |data| !data.is_empty()) {
+            println!("PRESENTING STATS WITH {:?}", orders.len() as u32);
+            present_stats(
+                coffee_makers.clone(),
+                total_num_orders,
+                orders.len() as u32,
+                INITIAL_QUANTITY * coffee_makers.len() as u32,
+            );
         }
-        present_stats(
-            coffee_makers.clone(),
-            total_num_orders,
-            orders.len() as u32,
-            INITIAL_QUANTITY * coffee_makers.len() as u32,
-        );
     }
 
     for handle in machines {
@@ -77,10 +70,10 @@ mod tests {
 
     #[test]
     fn test01_two_coffee_makers_with_two_dispensers_that_make_three_orders() {
-        let mut list_orders = Vec::new();
+        let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         for _ in 0..3 {
-            list_orders.push(order.clone());
+            orders_list.push(order.clone());
         }
 
         let mut coffee_makers = Vec::new();
@@ -88,13 +81,14 @@ mod tests {
             coffee_makers.push(CoffeeMaker::new(j, 100));
         }
 
-        let orders: Arc<Mutex<Vec<Order>>> = Arc::new(Mutex::new(list_orders));
+        let orders: Arc<(Mutex<Vec<Order>>, std::sync::Condvar)> =
+            Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
         let mut machines: Vec<JoinHandle<()>> = Vec::new();
         for coffee_maker in coffee_makers.clone() {
             let orders = orders.clone();
             let handle = thread::spawn(move || {
                 let coffee_maker_clone = coffee_maker.clone();
-                match coffee_maker_clone.work(&orders, Arc::new(Condvar::new())) {
+                match coffee_maker_clone.work(&orders) {
                     Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
                     Err(err) => {
                         println!("[COFFEE MAKER {:?}]: {:?} ERROR", coffee_maker.id, err)
