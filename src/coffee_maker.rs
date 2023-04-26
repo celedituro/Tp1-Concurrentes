@@ -2,7 +2,7 @@ use crate::containers::Containers;
 use crate::ingredient_handler::IHandler;
 use crate::orders_handler::order_handler::process_order;
 use crate::{errors::Error, orders::Order};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
 const DISPENSERS: u32 = 4;
@@ -35,7 +35,7 @@ impl CoffeeMaker {
     // Makes the dispensers to work
     pub fn work(
         self,
-        orders: &Arc<(Mutex<Vec<Order>>, Condvar)>,
+        orders: &Arc<RwLock<Vec<Order>>>,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
     ) -> Result<(), Error> {
         let mut dispensers: Vec<JoinHandle<()>> = Vec::new();
@@ -99,7 +99,7 @@ impl CoffeeMaker {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Condvar, Mutex};
+    use std::sync::{Arc, Condvar, Mutex, RwLock};
 
     use crate::errors::Error;
     use crate::orders_handler::order_handler::process_order;
@@ -111,7 +111,7 @@ mod tests {
         let order = Order::new(110, 100, 100, 100);
         let mut orders_list = Vec::new();
         orders_list.push(order);
-        let orders = Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let result = process_order(orders, coffee_maker, 0, orders_processed)
@@ -125,7 +125,7 @@ mod tests {
     fn test02_get_an_order_when_there_are_no_orders() {
         let coffee_maker = CoffeeMaker::new(0, 100);
         let orders_list = Vec::new();
-        let orders = Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let result = process_order(orders, coffee_maker, 0, orders_processed)
@@ -140,8 +140,7 @@ mod tests {
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         orders_list.push(order);
-        let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
-            Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
@@ -179,8 +178,7 @@ mod tests {
         for _ in 0..5 {
             orders_list.push(order.clone());
         }
-        let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
-            Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
@@ -218,8 +216,7 @@ mod tests {
         for _ in 0..10 {
             orders_list.push(order.clone());
         }
-        let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
-            Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
@@ -247,8 +244,7 @@ mod tests {
         for _ in 0..10 {
             orders_list.push(order.clone());
         }
-        let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
-            Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
