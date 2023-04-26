@@ -57,8 +57,8 @@ impl Containers {
         &mut self,
         ingredient: &String,
         value: u32,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
         more: bool,
     ) -> Result<(), Error> {
         if let Some(c) = self.all.get_mut(ingredient) {

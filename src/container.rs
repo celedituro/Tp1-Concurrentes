@@ -18,8 +18,8 @@ impl Container {
     pub fn update(
         &mut self,
         value: u32,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
         more: bool,
     ) -> Result<(), Error> {
         if !more {
@@ -35,8 +35,8 @@ impl Container {
     pub fn dispense(
         &mut self,
         value: u32,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
     ) -> Result<(), Error> {
         println!(
             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GETTING {:?} OF {:?} FROM {:?}",
@@ -55,8 +55,8 @@ impl Container {
     pub fn replenish(
         &mut self,
         value: u32,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
     ) -> Result<(), Error> {
         println!(
             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: INCREMENTING {:?} OF {:?} FROM {:?}",

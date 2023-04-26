@@ -5,21 +5,21 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: i32 = 4;
+const DISPENSERS: u32 = 4;
 const MIN_VALUE_TO_REPLENISH: u32 = 20;
 const REPLENISH_VALUE: u32 = 50;
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
-    pub id: i32,
+    pub id: u32,
     pub containers: Containers,
     pub handler: IHandler,
 }
 
 impl CoffeeMaker {
     // Creates a coffee maker with its container of ingredients and its id
-    pub fn new(id_value: i32, max_value: u32) -> CoffeeMaker {
-        let containers = Containers::new(max_value);
+    pub fn new(id_value: u32, initial_quantity: u32) -> CoffeeMaker {
+        let containers = Containers::new(initial_quantity);
         CoffeeMaker {
             id: id_value,
             containers: containers.clone(),

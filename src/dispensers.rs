@@ -9,8 +9,8 @@ pub mod dispenser {
     pub fn make_order(
         order: Order,
         mut containers: Containers,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
     ) -> Result<(), Error> {
         containers.get_ingredient(
             &COFFEE.to_owned(),

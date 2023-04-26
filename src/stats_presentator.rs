@@ -1,31 +1,13 @@
-use std::collections::HashMap;
+pub mod presenter {
 
-use crate::{coffee_maker::CoffeeMaker, containers::Containers, orders::Order};
+    use std::collections::HashMap;
 
-#[derive(Clone)]
-pub struct Presentator {
-    level_of_containers: Vec<HashMap<String, u32>>,
-    orders_processed: u32,
-    ingredients_consumed: HashMap<String, u32>,
-}
+    use crate::{coffee_maker::CoffeeMaker, containers::Containers};
 
-const INGREDIENTS: [&str; 6] = ["COFFEE", "WATER", "COCOA", "FOAM", "GRAIN_COFFEE", "MILK"];
+    const INGREDIENTS: [&str; 6] = ["coffee", "water", "cocoa", "foam", "grain_coffee", "milk"];
 
-impl Presentator {
-    pub fn new(
-        self,
-        coffee_makers: Vec<CoffeeMaker>,
-        orders: Vec<Order>,
-        initial_quantity: u32,
-    ) -> Presentator {
-        Presentator {
-            level_of_containers: self.clone().get_info_of(coffee_makers),
-            orders_processed: orders.len() as u32,
-            ingredients_consumed: self.get_ingredients_consumed(initial_quantity),
-        }
-    }
-
-    fn get_quantity_of(self, containers: Containers) -> HashMap<String, u32> {
+    /// Gets the current quantity of all the containers of all the coffee machines
+    pub fn get_quantity_of(containers: Containers) -> HashMap<String, u32> {
         let mut level_of_containers = HashMap::new();
         for ingredient in INGREDIENTS {
             if let Ok(container) = containers.all[&ingredient.to_owned()].read() {
@@ -36,56 +18,78 @@ impl Presentator {
         level_of_containers
     }
 
-    fn get_info_of(self, coffee_makers: Vec<CoffeeMaker>) -> Vec<HashMap<String, u32>> {
+    pub fn get_info_of(coffee_makers: Vec<CoffeeMaker>) -> Vec<HashMap<String, u32>> {
         let mut vec = Vec::new();
         for coffee_maker in coffee_makers {
-            vec.push(self.clone().get_quantity_of(coffee_maker.containers));
+            vec.push(get_quantity_of(coffee_maker.containers));
         }
 
         vec
     }
 
-    fn get_ingredients_consumed(self, initial: u32) -> HashMap<String, u32> {
+    /// Shows the total of orders already processed by the dispensers of all the coffee machines
+    pub fn get_orders_processed(total: u32, current: u32) -> u32 {
+        total - current
+    }
+
+    /// Shows the current quantity of ingredients consumed between all the containers of all the
+    /// coffee machines
+    pub fn get_ingredients_consumed(
+        containers_level: Vec<HashMap<String, u32>>,
+        initial_quantity: u32,
+    ) -> HashMap<String, u32> {
         let mut ingredients_consumed = HashMap::new();
         for ingredient in INGREDIENTS {
             let mut current = 0;
-            for i in self.clone().level_of_containers {
+            for i in containers_level.clone() {
                 current += i[&ingredient.to_owned()];
             }
-            ingredients_consumed.insert(ingredient.to_owned(), initial - current);
+            ingredients_consumed.insert(ingredient.to_owned(), initial_quantity - current);
         }
 
         ingredients_consumed
     }
 
-    // Shows the current quantity of all the containers
-    pub fn present_level_of_containers(self) {
+    /// Shows the current quantity of all the containers of all the coffee machines
+    pub fn present_level_of_containers(containers_level: Vec<HashMap<String, u32>>) {
         println!("[LEVEL OF CONTAINERS]");
-        for id in 0..self.level_of_containers.len() {
+        for (id, containers) in containers_level.iter().enumerate() {
             for ingredient in INGREDIENTS {
-                let quantity = self.level_of_containers[id][&ingredient.to_owned()];
+                let quantity = containers[&ingredient.to_owned()];
                 println!(
                     "[{:?} CONTAINER] OF [COFFEE MACHINE {:?}]: {:?}",
-                    ingredient, id, quantity
+                    ingredient, id as i32, quantity
                 );
             }
         }
     }
 
-    // Shows the current quantity of ingredients conssumed
-    pub fn present_ingredients_consumed(self) {
+    /// Shows the current quantity of ingredients consumed between all the containers of all the
+    /// coffee machines
+    pub fn present_ingredients_consumed(ingredients_consumed: HashMap<String, u32>) {
         println!("[INGREDIENTS CONSSUMED]");
 
         for ingredient in INGREDIENTS {
-            let quantity = self.ingredients_consumed[&ingredient.to_owned()];
+            let quantity = ingredients_consumed[&ingredient.to_owned()];
             println!("CONSUMPTION OF {:?}: {:?}", ingredient, quantity);
         }
     }
 
-    // Shows the stats
-    pub fn present_stats(self) {
-        self.clone().present_level_of_containers();
-        println!("[TOTAL ORDERS PROCESSED]: {:?}", self.orders_processed);
-        self.present_ingredients_consumed();
+    /// Shows stats of the level of containers of all the coffee machines, the total of orders processed
+    /// and the total of ingredients consumed between all the containers of all the coffee machines
+    pub fn present_stats(
+        coffee_makers: Vec<CoffeeMaker>,
+        total_num_orders: u32,
+        current_num_orders: u32,
+        initial_quantity: u32,
+    ) {
+        let containers_level = get_info_of(coffee_makers);
+        present_level_of_containers(containers_level.clone());
+        println!(
+            "[TOTAL ORDERS PROCESSED]: {:?}",
+            get_orders_processed(total_num_orders, current_num_orders)
+        );
+        let ingredients_consumed = get_ingredients_consumed(containers_level, initial_quantity);
+        present_ingredients_consumed(ingredients_consumed);
     }
 }

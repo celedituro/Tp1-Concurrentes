@@ -11,7 +11,7 @@ const WATER: &str = "water";
 
 #[derive(Clone)]
 pub struct IHandler {
-    coffee_maker_id: i32,
+    coffee_maker_id: u32,
     containers: Containers,
     values: HashMap<String, (String, u32, u32)>,
 }
@@ -20,7 +20,7 @@ impl IHandler {
     // Creates an ingredient IHandler for replenishing ingredients
     pub fn new(
         containers_list: Containers,
-        id: i32,
+        id: u32,
         min_value_to_replanish: u32,
         replanish_value: u32,
     ) -> IHandler {
@@ -50,7 +50,7 @@ impl IHandler {
     }
 
     // Replenish coffee, foam and water if its necessary
-    pub fn replenish_ingredients(&mut self, dispenser_id: i32) -> Result<(), Error> {
+    pub fn replenish_ingredients(&mut self, dispenser_id: u32) -> Result<(), Error> {
         println!("[DISPENSER {:?}]: GETTING MORE INGREDIENTS", dispenser_id);
         self.replenish(COFFEE.to_owned(), dispenser_id)?;
         self.replenish(FOAM.to_owned(), dispenser_id)?;
@@ -60,7 +60,7 @@ impl IHandler {
     }
 
     // Returns false if there is enough ingredient, returns true if not
-    fn has_to_replenish(&self, ingredient: &String, dispenser_id: i32) -> Result<bool, Error> {
+    fn has_to_replenish(&self, ingredient: &String, dispenser_id: u32) -> Result<bool, Error> {
         let has_to_get_more;
         if let Ok(container) = self.containers.all[ingredient].read() {
             has_to_get_more = container.quantity < self.values[ingredient].1;
@@ -77,7 +77,7 @@ impl IHandler {
 
     // Replenish the ingredient and dispense its given resource when there is not enough ingredient.
     // If the ingredient is water, it only replenish water
-    pub fn replenish(&mut self, ingredient: String, dispenser_id: i32) -> Result<(), Error> {
+    pub fn replenish(&mut self, ingredient: String, dispenser_id: u32) -> Result<(), Error> {
         if let Ok(get_more) = self.has_to_replenish(&ingredient, dispenser_id) {
             if get_more {
                 println!(

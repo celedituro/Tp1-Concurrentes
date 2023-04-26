@@ -4,21 +4,24 @@ use std::thread::{self, JoinHandle};
 use tp1::coffee_maker::CoffeeMaker;
 use tp1::errors::Error;
 use tp1::input_controller::InputController;
+use tp1::stats_presentator::presenter::present_stats;
 
-const COFFEE_MAKERS: i32 = 2;
+const COFFEE_MAKERS: u32 = 2;
+const INITIAL_QUANTITY: u32 = 100;
 
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
-    let orders: Arc<RwLock<Vec<tp1::orders::Order>>> =
-        Arc::new(RwLock::new(icontroller.get_orders()?));
+    let orders_list = icontroller.get_orders()?;
+    let orders = Arc::new(RwLock::new(orders_list.clone()));
+    let total_num_orders = orders_list.len() as u32;
 
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
-        coffee_makers.push(CoffeeMaker::new(j, 100));
+        coffee_makers.push(CoffeeMaker::new(j, INITIAL_QUANTITY));
     }
 
     let mut machines: Vec<JoinHandle<()>> = Vec::new();
-    for coffee_maker in coffee_makers {
+    for coffee_maker in coffee_makers.clone() {
         let orders = orders.clone();
         let coffee_maker_clone = coffee_maker.clone();
         let handle = thread::spawn(move || match coffee_maker_clone.clone().work(&orders) {
@@ -31,6 +34,17 @@ fn main() -> Result<(), Error> {
             }
         });
         machines.push(handle);
+    }
+
+    if let Ok(orders) = orders.read() {
+        println!("PRESENTING STATS WITH {:?}", orders.len() as u32);
+        println!("TOTAL ORDERS {:?}", total_num_orders);
+        present_stats(
+            coffee_makers.clone(),
+            total_num_orders,
+            orders.len() as u32,
+            INITIAL_QUANTITY * coffee_makers.len() as u32,
+        );
     }
 
     for handle in machines {

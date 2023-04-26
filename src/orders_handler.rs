@@ -1,14 +1,15 @@
 pub mod order_handler {
+    use std::sync::{Arc, RwLock};
+
     use crate::{
         coffee_maker::CoffeeMaker, dispensers::dispenser::make_order, errors::Error, orders::Order,
     };
-    use std::sync::{Arc, RwLock};
 
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
     fn get_order(
         orders: Arc<RwLock<Vec<Order>>>,
-        dispenser_id: i32,
-        coffee_maker_id: i32,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
     ) -> Result<Order, Error> {
         let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
@@ -31,7 +32,7 @@ pub mod order_handler {
     pub fn process_order(
         orders: Arc<RwLock<Vec<Order>>>,
         mut coffee_maker: CoffeeMaker,
-        dispenser_id: i32,
+        dispenser_id: u32,
     ) -> Result<(), Error> {
         loop {
             match get_order(orders.clone(), dispenser_id, coffee_maker.id) {
