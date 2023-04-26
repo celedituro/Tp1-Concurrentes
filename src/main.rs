@@ -1,4 +1,4 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread::{self, JoinHandle};
 
 use tp1::coffee_maker::CoffeeMaker;
@@ -12,7 +12,8 @@ const INITIAL_QUANTITY: u32 = 100;
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
     let orders_list = icontroller.get_orders()?;
-    let orders = Arc::new(RwLock::new(orders_list.clone()));
+    let orders = Arc::new(Mutex::new(orders_list.clone()));
+    let condvar = Arc::new(Condvar::new());
     let total_num_orders = orders_list.len() as u32;
 
     let mut coffee_makers = Vec::new();
@@ -23,22 +24,30 @@ fn main() -> Result<(), Error> {
     let mut machines: Vec<JoinHandle<()>> = Vec::new();
     for coffee_maker in coffee_makers.clone() {
         let orders = orders.clone();
+        let condvar = condvar.clone();
         let coffee_maker_clone = coffee_maker.clone();
-        let handle = thread::spawn(move || match coffee_maker_clone.clone().work(&orders) {
-            Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
-            Err(err) => {
-                println!(
-                    "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
-                    coffee_maker.id, err
-                )
-            }
-        });
+        let handle =
+            thread::spawn(
+                move || match coffee_maker_clone.clone().work(&orders, condvar) {
+                    Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+                    Err(err) => {
+                        println!(
+                            "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
+                            coffee_maker.id, err
+                        )
+                    }
+                },
+            );
         machines.push(handle);
     }
 
-    if let Ok(orders) = orders.read() {
+    if let Ok(mut orders) = orders.lock() {
         println!("PRESENTING STATS WITH {:?}", orders.len() as u32);
-        println!("TOTAL ORDERS {:?}", total_num_orders);
+        println!("TOTAL ORDERS afuera {:?}", total_num_orders);
+        while (orders.len() as u32) > 4 {
+            println!("TOTAL ORDERS adentro {:?}", orders.len());
+            orders = condvar.wait(orders).unwrap();
+        }
         present_stats(
             coffee_makers.clone(),
             total_num_orders,
@@ -60,7 +69,7 @@ fn main() -> Result<(), Error> {
 #[cfg(test)]
 mod tests {
     use std::{
-        sync::{Arc, RwLock},
+        sync::{Arc, Condvar, Mutex},
         thread::{self, JoinHandle},
     };
 
@@ -79,13 +88,13 @@ mod tests {
             coffee_makers.push(CoffeeMaker::new(j, 100));
         }
 
-        let orders: Arc<RwLock<Vec<Order>>> = Arc::new(RwLock::new(list_orders));
+        let orders: Arc<Mutex<Vec<Order>>> = Arc::new(Mutex::new(list_orders));
         let mut machines: Vec<JoinHandle<()>> = Vec::new();
         for coffee_maker in coffee_makers.clone() {
             let orders = orders.clone();
             let handle = thread::spawn(move || {
                 let coffee_maker_clone = coffee_maker.clone();
-                match coffee_maker_clone.work(&orders) {
+                match coffee_maker_clone.work(&orders, Arc::new(Condvar::new())) {
                     Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
                     Err(err) => {
                         println!("[COFFEE MAKER {:?}]: {:?} ERROR", coffee_maker.id, err)
