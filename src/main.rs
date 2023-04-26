@@ -11,9 +11,8 @@ const INITIAL_QUANTITY: u32 = 100;
 
 fn main() -> Result<(), Error> {
     let icontroller = InputController::new(std::env::args().nth(1))?;
-    let orders_list = icontroller.get_orders()?;
-    let orders = Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
-    let total_num_orders = orders_list.len() as u32;
+    let orders = Arc::new((Mutex::new(icontroller.get_orders()?), Condvar::new()));
+    let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
@@ -23,27 +22,29 @@ fn main() -> Result<(), Error> {
     let mut machines: Vec<JoinHandle<()>> = Vec::new();
     for coffee_maker in coffee_makers.clone() {
         let orders = orders.clone();
+        let orders_processed = orders_processed.clone();
         let coffee_maker_clone = coffee_maker.clone();
-        let handle = thread::spawn(move || match coffee_maker_clone.clone().work(&orders) {
-            Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
-            Err(err) => {
-                println!(
-                    "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
-                    coffee_maker.id, err
-                )
+        let handle = thread::spawn(move || {
+            match coffee_maker_clone.clone().work(&orders, orders_processed) {
+                Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+                Err(err) => {
+                    println!(
+                        "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
+                        coffee_maker.id, err
+                    )
+                }
             }
         });
         machines.push(handle);
     }
 
-    let (orders_lock, condvar) = &*orders;
-    if let Ok(orders) = orders_lock.lock() {
-        if let Ok(orders) = condvar.wait_while(orders, |data| !data.is_empty()) {
-            println!("PRESENTING STATS WITH {:?}", orders.len() as u32);
+    let (orders_processed_lock, condvar) = &*orders_processed;
+    if let Ok(orders_processed) = orders_processed_lock.lock() {
+        if let Ok(orders_processed) = condvar.wait_while(orders_processed, |num| *num < 3) {
+            println!("PRESENTING STATS WITH");
             present_stats(
                 coffee_makers.clone(),
-                total_num_orders,
-                orders.len() as u32,
+                *orders_processed as u32,
                 INITIAL_QUANTITY * coffee_makers.len() as u32,
             );
         }
@@ -75,6 +76,7 @@ mod tests {
         for _ in 0..3 {
             orders_list.push(order.clone());
         }
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let mut coffee_makers = Vec::new();
         for j in 0..2 {
@@ -86,9 +88,10 @@ mod tests {
         let mut machines: Vec<JoinHandle<()>> = Vec::new();
         for coffee_maker in coffee_makers.clone() {
             let orders = orders.clone();
+            let orders_processed = orders_processed.clone();
             let handle = thread::spawn(move || {
                 let coffee_maker_clone = coffee_maker.clone();
-                match coffee_maker_clone.work(&orders) {
+                match coffee_maker_clone.work(&orders, orders_processed) {
                     Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
                     Err(err) => {
                         println!("[COFFEE MAKER {:?}]: {:?} ERROR", coffee_maker.id, err)

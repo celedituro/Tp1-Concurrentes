@@ -33,10 +33,15 @@ impl CoffeeMaker {
     }
 
     // Makes the dispensers to work
-    pub fn work(self, orders: &Arc<(Mutex<Vec<Order>>, Condvar)>) -> Result<(), Error> {
+    pub fn work(
+        self,
+        orders: &Arc<(Mutex<Vec<Order>>, Condvar)>,
+        orders_processed: Arc<(Mutex<i32>, Condvar)>,
+    ) -> Result<(), Error> {
         let mut dispensers: Vec<JoinHandle<()>> = Vec::new();
         for i in 0..DISPENSERS {
             let orders = Arc::clone(orders);
+            let orders_processed = orders_processed.clone();
             let coffee_machine = self.clone();
             let handle = thread::spawn(move || {
                 println!(
@@ -44,7 +49,7 @@ impl CoffeeMaker {
                     i,
                     coffee_machine.clone().id
                 );
-                match process_order(orders, coffee_machine.clone(), i) {
+                match process_order(orders, coffee_machine.clone(), i, orders_processed) {
                     Ok(_) => println!(
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
                         i,
@@ -107,8 +112,9 @@ mod tests {
         let mut orders_list = Vec::new();
         orders_list.push(order);
         let orders = Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let result = process_order(orders, coffee_maker, 0)
+        let result = process_order(orders, coffee_maker, 0, orders_processed)
             .expect_err("There is not enough ingredient to make the order");
         let err_expected = Error::NotEnoughIngredient;
 
@@ -120,8 +126,10 @@ mod tests {
         let coffee_maker = CoffeeMaker::new(0, 100);
         let orders_list = Vec::new();
         let orders = Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let result = process_order(orders, coffee_maker, 0).expect_err("There are no more orders");
+        let result = process_order(orders, coffee_maker, 0, orders_processed)
+            .expect_err("There are no more orders");
         let err_expected = Error::NoMoreOrders;
 
         assert_eq!(result, err_expected);
@@ -134,11 +142,12 @@ mod tests {
         orders_list.push(order);
         let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
             Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders)
+            .work(&orders, orders_processed)
             .expect("Error when working");
 
         let coffee = coffee_maker.clone().containers.all["coffee"]
@@ -172,11 +181,12 @@ mod tests {
         }
         let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
             Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders)
+            .work(&orders, orders_processed)
             .expect("Error when working");
 
         let coffee = coffee_maker.clone().containers.all["coffee"]
@@ -210,11 +220,12 @@ mod tests {
         }
         let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
             Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders)
+            .work(&orders, orders_processed)
             .expect("Error when working");
 
         let grain_coffee = coffee_maker.clone().containers.all["grain_coffee"]
@@ -238,11 +249,12 @@ mod tests {
         }
         let orders: Arc<(Mutex<Vec<Order>>, Condvar)> =
             Arc::new((Mutex::new(orders_list.clone()), Condvar::new()));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders)
+            .work(&orders, orders_processed)
             .expect("Error when working");
 
         let milk = coffee_maker.clone().containers.all["milk"]

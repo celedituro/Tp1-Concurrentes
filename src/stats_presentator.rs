@@ -27,11 +27,6 @@ pub mod presenter {
         vec
     }
 
-    /// Shows the total of orders already processed by the dispensers of all the coffee machines
-    pub fn get_orders_processed(total: u32, current: u32) -> u32 {
-        total - current
-    }
-
     /// Shows the current quantity of ingredients consumed between all the containers of all the
     /// coffee machines
     pub fn get_ingredients_consumed(
@@ -79,16 +74,12 @@ pub mod presenter {
     /// and the total of ingredients consumed between all the containers of all the coffee machines
     pub fn present_stats(
         coffee_makers: Vec<CoffeeMaker>,
-        total_num_orders: u32,
         current_num_orders: u32,
         initial_quantity: u32,
     ) {
         let containers_level = get_info_of(coffee_makers);
         present_level_of_containers(containers_level.clone());
-        println!(
-            "[TOTAL ORDERS PROCESSED]: {:?}",
-            get_orders_processed(total_num_orders, current_num_orders)
-        );
+        println!("[TOTAL ORDERS PROCESSED]: {:?}", current_num_orders);
         let ingredients_consumed = get_ingredients_consumed(containers_level, initial_quantity);
         present_ingredients_consumed(ingredients_consumed);
     }

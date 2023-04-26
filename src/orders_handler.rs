@@ -34,6 +34,7 @@ pub mod order_handler {
         orders: Arc<(Mutex<Vec<Order>>, Condvar)>,
         mut coffee_maker: CoffeeMaker,
         dispenser_id: u32,
+        orders_processed: Arc<(Mutex<i32>, Condvar)>,
     ) -> Result<(), Error> {
         loop {
             match get_order(orders.clone(), dispenser_id, coffee_maker.id) {
@@ -48,10 +49,8 @@ pub mod order_handler {
                         coffee_maker.containers.clone(),
                         dispenser_id,
                         coffee_maker.id,
+                        orders_processed.clone(),
                     )?;
-
-                    let (_orders_lock, condvar) = &*orders;
-                    condvar.notify_one();
                 }
                 Err(error) => return Err(error),
             }

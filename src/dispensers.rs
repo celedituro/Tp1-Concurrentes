@@ -1,4 +1,6 @@
 pub mod dispenser {
+    use std::sync::{Arc, Condvar, Mutex};
+
     use crate::{containers::Containers, errors::Error, orders::Order};
 
     const COFFEE: &str = "coffee";
@@ -11,6 +13,7 @@ pub mod dispenser {
         mut containers: Containers,
         dispenser_id: u32,
         coffee_maker_id: u32,
+        orders_processed: Arc<(Mutex<i32>, Condvar)>,
     ) -> Result<(), Error> {
         containers.get_ingredient(
             &COFFEE.to_owned(),
@@ -40,6 +43,16 @@ pub mod dispenser {
             coffee_maker_id,
             false,
         )?;
+
+        let (orders_processed_lock, condvar) = &*orders_processed;
+        if let Ok(mut num_orders_processed) = orders_processed_lock.lock() {
+            *num_orders_processed += 1;
+            println!(
+                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ACTUALIZANDO NUM ORDERS PROCESSED: {:?}",
+                dispenser_id, coffee_maker_id, num_orders_processed
+            );
+            condvar.notify_one();
+        }
 
         println!(
             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS",
