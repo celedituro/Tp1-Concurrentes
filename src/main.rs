@@ -1,5 +1,6 @@
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
+use std::time::Duration;
 
 use tp1::coffee_maker::CoffeeMaker;
 use tp1::errors::Error;
@@ -38,17 +39,30 @@ fn main() -> Result<(), Error> {
         machines.push(handle);
     }
 
-    let (orders_processed_lock, condvar) = &*orders_processed;
-    if let Ok(orders_processed) = orders_processed_lock.lock() {
-        if let Ok(orders_processed) = condvar.wait_while(orders_processed, |num| *num < 3) {
-            println!("PRESENTING STATS WITH");
-            present_stats(
-                coffee_makers.clone(),
-                *orders_processed as u32,
-                INITIAL_QUANTITY * coffee_makers.len() as u32,
-            );
+    let coffee_makers = coffee_makers.clone();
+    let join_handle = thread::spawn(move || loop {
+        println!("[PRESENTER]: MAKING STATS");
+        let (orders_processed_lock, condvar) = &*orders_processed;
+        if let Ok(orders_processed) = orders_processed_lock.lock() {
+            if let Ok(orders_processed) = condvar.wait_while(orders_processed, |num| *num == 0) {
+                println!("PRESENTING STATS WITH NUM ORDERS: {:?}", orders_processed);
+                present_stats(
+                    coffee_makers.clone(),
+                    *orders_processed as u32,
+                    INITIAL_QUANTITY * coffee_makers.len() as u32,
+                );
+            }
         }
-    }
+        if let Ok(orders) = orders.read() {
+            if orders.is_empty() {
+                println!("[PRESENTER]: NO MORE ORDERS");
+                break;
+            }
+        }
+        thread::sleep(Duration::from_secs(1));
+    });
+
+    join_handle.join().unwrap();
 
     for handle in machines {
         match handle.join() {
