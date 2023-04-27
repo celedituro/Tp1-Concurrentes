@@ -1,7 +1,9 @@
 pub mod dispenser {
     use std::sync::{Arc, Condvar, Mutex};
 
-    use crate::{containers::Containers, errors::Error, orders::Order};
+    use crate::{
+        containers::Containers, errors::Error, ingredient_handler::IHandler, orders::Order,
+    };
 
     const COFFEE: &str = "coffee";
     const WATER: &str = "water";
@@ -14,7 +16,9 @@ pub mod dispenser {
         dispenser_id: u32,
         coffee_maker_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
+        mut handler: IHandler,
     ) -> Result<(), Error> {
+        handler.replenish(COFFEE.to_owned())?;
         containers.get_ingredient(
             &COFFEE.to_owned(),
             order.coffee,
@@ -22,6 +26,8 @@ pub mod dispenser {
             coffee_maker_id,
             false,
         )?;
+
+        handler.replenish(WATER.to_owned())?;
         containers.get_ingredient(
             &WATER.to_owned(),
             order.water,
@@ -29,16 +35,19 @@ pub mod dispenser {
             coffee_maker_id,
             false,
         )?;
+
+        handler.replenish(FOAM.to_owned())?;
         containers.get_ingredient(
-            &COCOA.to_owned(),
-            order.cocoa,
+            &FOAM.to_owned(),
+            order.foam,
             dispenser_id,
             coffee_maker_id,
             false,
         )?;
+
         containers.get_ingredient(
-            &FOAM.to_owned(),
-            order.foam,
+            &COCOA.to_owned(),
+            order.cocoa,
             dispenser_id,
             coffee_maker_id,
             false,

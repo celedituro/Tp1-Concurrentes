@@ -31,7 +31,7 @@ pub mod order_handler {
     // Gets an order and processes it if it can, returns an error if not
     pub fn process_order(
         orders: Arc<RwLock<Vec<Order>>>,
-        mut coffee_maker: CoffeeMaker,
+        coffee_maker: CoffeeMaker,
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
     ) -> Result<(), Error> {
@@ -42,13 +42,13 @@ pub mod order_handler {
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
                         dispenser_id, coffee_maker.id, order
                     );
-                    coffee_maker.handler.replenish_ingredients(dispenser_id)?;
                     make_order(
                         order,
                         coffee_maker.containers.clone(),
                         dispenser_id,
                         coffee_maker.id,
                         orders_processed.clone(),
+                        coffee_maker.handler.clone(),
                     )?;
                 }
                 Err(error) => return Err(error),
