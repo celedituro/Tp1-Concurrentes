@@ -10,8 +10,8 @@ pub mod presenter {
     pub fn get_quantity_of(containers: Containers) -> HashMap<String, u32> {
         let mut level_of_containers = HashMap::new();
         for ingredient in INGREDIENTS {
-            if let Ok(container) = containers.all[&ingredient.to_owned()].read() {
-                level_of_containers.insert(ingredient.to_owned(), container.quantity);
+            if let Ok(quantity) = containers.clone().get_quantity_of(&ingredient.to_owned()) {
+                level_of_containers.insert(ingredient.to_owned(), quantity);
             }
         }
 

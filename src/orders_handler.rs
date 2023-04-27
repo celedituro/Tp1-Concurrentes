@@ -48,7 +48,6 @@ pub mod order_handler {
                         dispenser_id,
                         coffee_maker.id,
                         orders_processed.clone(),
-                        coffee_maker.handler.clone(),
                     )?;
                 }
                 Err(error) => return Err(error),

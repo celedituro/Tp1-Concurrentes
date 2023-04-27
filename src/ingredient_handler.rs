@@ -13,34 +13,19 @@ const MILK: &str = "milk";
 pub struct IHandler {
     coffee_maker_id: u32,
     containers: Containers,
-    values: HashMap<String, (String, u32, u32)>,
+    values: HashMap<String, (String, u32)>,
 }
 
 impl IHandler {
     // Creates an ingredient IHandler for replenishing ingredients
-    pub fn new(
-        containers_list: Containers,
-        id: u32,
-        min_value_to_replanish: u32,
-        replanish_value: u32,
-    ) -> IHandler {
+    pub fn new(containers_list: Containers, id: u32, replenish_value: u32) -> IHandler {
         let mut ingredients = HashMap::new();
         ingredients.insert(
             COFFEE.to_owned(),
-            (
-                GRAIN_COFFEE.to_owned(),
-                min_value_to_replanish,
-                replanish_value,
-            ),
+            (GRAIN_COFFEE.to_owned(), replenish_value),
         );
-        ingredients.insert(
-            FOAM.to_owned(),
-            (MILK.to_owned(), min_value_to_replanish, replanish_value),
-        );
-        ingredients.insert(
-            WATER.to_owned(),
-            ("".to_owned(), min_value_to_replanish, replanish_value),
-        );
+        ingredients.insert(FOAM.to_owned(), (MILK.to_owned(), replenish_value));
+        ingredients.insert(WATER.to_owned(), ("".to_owned(), replenish_value));
 
         IHandler {
             coffee_maker_id: id,
@@ -49,46 +34,35 @@ impl IHandler {
         }
     }
 
-    // Returns false if there is enough ingredient, returns true if not
-    fn has_to_replenish(&self, ingredient: &String) -> Result<bool, Error> {
-        let has_to_get_more;
-        if let Ok(container) = self.containers.all[ingredient].read() {
-            has_to_get_more = container.quantity < self.values[ingredient].1;
-            println!(
-                "[INGREDIENT HANDLER: ¿HAS TO GET MORE {:?}? {:?}",
-                ingredient, has_to_get_more
-            );
-        } else {
-            return Err(Error::CantWriteContainerLock);
-        };
-
-        Ok(has_to_get_more)
-    }
-
     // Replenish the ingredient and dispense its given resource when there is not enough ingredient.
     // If the ingredient is water, it only replenish water
     pub fn replenish(&mut self, ingredient: String) -> Result<(), Error> {
-        if let Ok(get_more) = self.has_to_replenish(&ingredient) {
-            if get_more {
-                println!("[INGREDIENT HANDLER]: GETTING MORE{:?}", ingredient);
-                self.containers.get_ingredient(
-                    &ingredient,
-                    self.values[&ingredient].2,
-                    0,
-                    self.coffee_maker_id,
-                    true,
-                )?;
-                if ingredient != WATER {
-                    self.containers.get_ingredient(
-                        &self.values[&ingredient].0,
-                        self.values[&ingredient].2,
-                        0,
-                        self.coffee_maker_id,
-                        false,
-                    )?;
-                };
+        if ingredient != WATER {
+            let resource = &self.values[&ingredient].0;
+            println!(
+                "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: EXTRACTING FROM {:?} CONTAINER",
+                self.coffee_maker_id, resource
+            );
+            let (resource_container_lock, condvar) = &*self.containers.all[resource];
+            if let Ok(mut resource_container) = resource_container_lock.lock() {
+                resource_container.dispense(self.values[&ingredient].1, 0, self.coffee_maker_id)?;
+            } else {
+                return Err(Error::CantHaveContainerLock);
             }
-        };
+            condvar.notify_all();
+        }
+
+        println!(
+            "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
+            self.coffee_maker_id, ingredient
+        );
+        let (ingredient_container_lock, condvar) = &*self.containers.all[&ingredient];
+        if let Ok(mut ingredient_container) = ingredient_container_lock.lock() {
+            ingredient_container.replenish(self.values[&ingredient].1, self.coffee_maker_id)?;
+        } else {
+            return Err(Error::CantHaveContainerLock);
+        }
+        condvar.notify_all();
 
         Ok(())
     }
@@ -105,44 +79,9 @@ mod tests {
     use super::IHandler;
 
     #[test]
-    fn test01_quantity_is_ten_and_min_value_to_replanish_is_twenty_so_has_to_replanish() {
-        let handler = IHandler::new(Containers::new(10), 0, 20, 50);
-        let coffee_got = handler
-            .has_to_replenish(&"coffee".to_string())
-            .expect("Error");
-        let foam_got = handler
-            .has_to_replenish(&"foam".to_string())
-            .expect("Error");
-        let water_got = handler
-            .has_to_replenish(&"water".to_string())
-            .expect("Error");
-
-        assert_eq!(coffee_got, true);
-        assert_eq!(foam_got, true);
-        assert_eq!(water_got, true);
-    }
-
-    #[test]
-    fn test02_quantity_is_thirty_and_min_value_to_replenish_is_twenty_so_has_not_to_replanish() {
-        let handler = IHandler::new(Containers::new(30), 0, 20, 50);
-        let coffee_got = handler
-            .has_to_replenish(&"coffee".to_string())
-            .expect("Error");
-        let foam_got = handler
-            .has_to_replenish(&"foam".to_string())
-            .expect("Error");
-        let water_got = handler
-            .has_to_replenish(&"water".to_string())
-            .expect("Error");
-
-        assert_eq!(coffee_got, false);
-        assert_eq!(foam_got, false);
-        assert_eq!(water_got, false);
-    }
-
-    #[test]
-    fn test03_quantity_is_ten_and_min_value_to_replanish_is_twenty_so_replanish_them() {
-        let mut handler = IHandler::new(Containers::new(10), 0, 20, 10);
+    fn test01_quantity_is_ten_and_replenish_value_is_ten_so_when_replenishing_them_theirs_quantity_is_twenty(
+    ) {
+        let mut handler = IHandler::new(Containers::new(10), 0, 10);
         handler
             .replenish(COFFEE.to_owned())
             .expect("Error when replenishing coffee");
@@ -153,18 +92,18 @@ mod tests {
             .replenish(FOAM.to_owned())
             .expect("Error when replenishing foam");
 
-        let coffee_got = handler.containers.all["coffee"]
-            .read()
-            .expect("Error when reading coffee container")
-            .quantity;
-        let foam_got = handler.containers.all["foam"]
-            .read()
-            .expect("Error when reading coffee container")
-            .quantity;
-        let water_got = handler.containers.all["water"]
-            .read()
-            .expect("Error when reading coffee container")
-            .quantity;
+        let coffee_got = handler
+            .containers
+            .get_quantity_of(&"coffee".to_string())
+            .expect("Error when locking coffee container");
+        let foam_got = handler
+            .containers
+            .get_quantity_of(&"foam".to_string())
+            .expect("Error when locking foam container");
+        let water_got = handler
+            .containers
+            .get_quantity_of(&"water".to_string())
+            .expect("Error when locking water container");
 
         assert_eq!(coffee_got, 20);
         assert_eq!(foam_got, 20);
@@ -172,8 +111,9 @@ mod tests {
     }
 
     #[test]
-    fn test04_quantity_is_thirty_and_min_value_to_replanish_is_twenty_so_dont_replanish_them() {
-        let mut handler = IHandler::new(Containers::new(30), 0, 20, 10);
+    fn test02_quantity_is_ten_and_replenish_value_is_ten_so_when_replenishing_ingredient_the_resource_quantity_is_zero(
+    ) {
+        let mut handler = IHandler::new(Containers::new(10), 0, 10);
         handler
             .replenish(COFFEE.to_owned())
             .expect("Error when replenishing coffee");
@@ -184,27 +124,22 @@ mod tests {
             .replenish(FOAM.to_owned())
             .expect("Error when replenishing foam");
 
-        let coffee_got = handler.containers.all["coffee"]
-            .read()
-            .expect("Error when reading coffee container")
-            .quantity;
-        let foam_got = handler.containers.all["foam"]
-            .read()
-            .expect("Error when reading coffee container")
-            .quantity;
-        let water_got = handler.containers.all["water"]
-            .read()
-            .expect("Error when reading coffee container")
-            .quantity;
+        let grain_coffee_got = handler
+            .containers
+            .get_quantity_of(&"grain_coffee".to_string())
+            .expect("Error when locking coffee container");
+        let milk_got = handler
+            .containers
+            .get_quantity_of(&"milk".to_string())
+            .expect("Error when locking foam container");
 
-        assert_eq!(coffee_got, 30);
-        assert_eq!(foam_got, 30);
-        assert_eq!(water_got, 30);
+        assert_eq!(grain_coffee_got, 0);
+        assert_eq!(milk_got, 0);
     }
 
     #[test]
-    fn test05_has_to_replanish_but_dont_have_enough_resource_so_dont_replanish_them() {
-        let mut handler = IHandler::new(Containers::new(10), 0, 30, 50);
+    fn test03_has_to_replenish_but_do_not_have_enough_resource_so_do_not_replenish_them() {
+        let mut handler = IHandler::new(Containers::new(10), 0, 50);
         let err_got = handler
             .replenish(COFFEE.to_owned())
             .expect_err("Error when replenishing coffee");

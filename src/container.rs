@@ -15,22 +15,6 @@ impl Container {
         }
     }
 
-    pub fn update(
-        &mut self,
-        value: u32,
-        dispenser_id: u32,
-        coffee_maker_id: u32,
-        more: bool,
-    ) -> Result<(), Error> {
-        if !more {
-            self.dispense(value, dispenser_id, coffee_maker_id)?;
-        } else {
-            self.replenish(value, dispenser_id, coffee_maker_id)?;
-        }
-
-        Ok(())
-    }
-
     // Updates the quantity of its ingredient if can, returns an error if not
     pub fn dispense(
         &mut self,
@@ -52,15 +36,10 @@ impl Container {
     }
 
     // Increments the quantity of its ingredient if can, returns an error if not
-    pub fn replenish(
-        &mut self,
-        value: u32,
-        dispenser_id: u32,
-        coffee_maker_id: u32,
-    ) -> Result<(), Error> {
+    pub fn replenish(&mut self, value: u32, coffee_maker_id: u32) -> Result<(), Error> {
         println!(
-            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: INCREMENTING {:?} OF {:?} FROM {:?}",
-            dispenser_id, coffee_maker_id, value, self.name, self.quantity
+            "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: INCREMENTING {:?} OF {:?} FROM {:?}",
+            coffee_maker_id, value, self.name, self.quantity
         );
         self.quantity += value;
 
@@ -111,29 +90,7 @@ mod tests {
     #[test]
     fn test04_increase_its_quantity_when_replenishing() {
         let mut container = Container::new("coffe".to_string(), 10);
-        container
-            .replenish(5, 0, 0)
-            .expect("Error when replinishing");
-        let quantity_expected = 15;
-        assert_eq!(container.quantity, quantity_expected);
-    }
-
-    #[test]
-    fn test05_decrease_its_quantity_when_flag_is_not_activated() {
-        let mut container = Container::new("coffe".to_string(), 10);
-        container
-            .update(5, 0, 0, false)
-            .expect("Error when replinishing");
-        let quantity_expected = 5;
-        assert_eq!(container.quantity, quantity_expected);
-    }
-
-    #[test]
-    fn test06_increase_its_quantity_when_flag_is_activated() {
-        let mut container = Container::new("coffe".to_string(), 10);
-        container
-            .update(5, 0, 0, true)
-            .expect("Error when replinishing");
+        container.replenish(5, 0).expect("Error when replinishing");
         let quantity_expected = 15;
         assert_eq!(container.quantity, quantity_expected);
     }

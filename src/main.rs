@@ -10,12 +10,12 @@ use tp1::stats_presenter::presenter::present_stats;
 
 const COFFEE_MAKERS: u32 = 2;
 const INITIAL_QUANTITY: u32 = 100;
-const MIN_VALUE_TO_REPLENISH: u32 = 20;
 const VALUE_TO_REPLENISH: u32 = 50;
 
 fn show_stats(coffee_makers: Vec<CoffeeMaker>, orders_processed: Arc<(Mutex<i32>, Condvar)>) {
     let (orders_processed_lock, condvar) = &*orders_processed;
     if let Ok(orders_processed) = orders_processed_lock.lock() {
+        println!("[PRESENTER]: WAITING");
         if let Ok(orders_processed) = condvar.wait_while(orders_processed, |num| *num == 0) {
             println!("PRESENTING STATS WITH NUM ORDERS: {:?}", orders_processed);
             present_stats(
@@ -25,6 +25,7 @@ fn show_stats(coffee_makers: Vec<CoffeeMaker>, orders_processed: Arc<(Mutex<i32>
             );
         }
     }
+    condvar.notify_all();
 }
 
 fn present_statistics(
@@ -33,11 +34,11 @@ fn present_statistics(
     orders: Arc<RwLock<Vec<Order>>>,
 ) {
     let presenter_handle = thread::spawn(move || loop {
-        println!("[PRESENTER]: MAKING STATS");
+        println!("[PRESENTER]: PREPARING STATS");
         show_stats(coffee_makers.clone(), orders_processed.clone());
         if let Ok(orders) = orders.read() {
             if orders.is_empty() {
-                println!("[PRESENTER]: NO MORE ORDERS");
+                println!("[PRESENTER]: FINISHING SINCE NO MORE ORDERS");
                 break;
             }
         }
@@ -45,7 +46,7 @@ fn present_statistics(
     });
 
     match presenter_handle.join() {
-        Ok(_) => println!("[PRESENTER]: FINALIZING"),
+        Ok(_) => println!("[PRESENTER]: FINISHING"),
         Err(_) => println!("[PRESENTER]: ERROR WHEN JOINING"),
     };
 }
@@ -53,12 +54,7 @@ fn present_statistics(
 fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
-        coffee_makers.push(CoffeeMaker::new(
-            j,
-            INITIAL_QUANTITY,
-            MIN_VALUE_TO_REPLENISH,
-            VALUE_TO_REPLENISH,
-        ));
+        coffee_makers.push(CoffeeMaker::new(j, INITIAL_QUANTITY, VALUE_TO_REPLENISH));
     }
 
     coffee_makers
@@ -93,7 +89,7 @@ fn main() -> Result<(), Error> {
 
     for handle in machines {
         match handle.join() {
-            Ok(_) => println!("[COFFEE MAKER]: FINALIZING"),
+            Ok(_) => println!("[COFFEE MAKER]: FINISHING"),
             Err(_) => println!("[COFFEE MAKER]: ERROR WHEN JOINING"),
         }
     }
@@ -121,7 +117,7 @@ mod tests {
 
         let mut coffee_makers = Vec::new();
         for j in 0..2 {
-            coffee_makers.push(CoffeeMaker::new(j, 100, 20, 50));
+            coffee_makers.push(CoffeeMaker::new(j, 100, 50));
         }
         let orders = Arc::new(RwLock::new(orders_list));
 
@@ -132,7 +128,7 @@ mod tests {
             let handle = thread::spawn(move || {
                 let coffee_maker_clone = coffee_maker.clone();
                 match coffee_maker_clone.start(&orders, orders_processed) {
-                    Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
+                    Ok(_) => println!("[COFFEE MAKER {:?}]: FINISHING", coffee_maker.id),
                     Err(err) => {
                         println!("[COFFEE MAKER {:?}]: {:?} ERROR", coffee_maker.id, err)
                     }
@@ -148,41 +144,43 @@ mod tests {
         let coffee_maker_0 = &coffee_makers[0];
         let coffee_maker_1 = &coffee_makers[1];
 
-        let coffee_0 = coffee_maker_0.clone().containers.all["coffee"]
-            .read()
-            .expect("Coffee maker 0 cant have read lock of the coffee container")
-            .quantity;
-        let coffee_1 = coffee_maker_1.clone().containers.all["coffee"]
-            .read()
-            .expect("Coffee maker 1 cant have read lock of the coffee container")
-            .quantity;
+        let coffee_0 = coffee_maker_0
+            .containers
+            .get_quantity_of(&"coffee".to_string())
+            .expect("Error when locking coffee container");
+        let foam_0 = coffee_maker_0
+            .containers
+            .get_quantity_of(&"foam".to_string())
+            .expect("Error when locking foam container");
+        let water_0 = coffee_maker_0
+            .containers
+            .get_quantity_of(&"water".to_string())
+            .expect("Error when locking water container");
+        let cocoa_0 = coffee_maker_0
+            .containers
+            .get_quantity_of(&"cocoa".to_string())
+            .expect("Error when locking cocoa container");
+
+        let coffee_1 = coffee_maker_1
+            .containers
+            .get_quantity_of(&"coffee".to_string())
+            .expect("Error when locking coffee container");
+        let foam_1 = coffee_maker_1
+            .containers
+            .get_quantity_of(&"foam".to_string())
+            .expect("Error when locking foam container");
+        let water_1 = coffee_maker_1
+            .containers
+            .get_quantity_of(&"water".to_string())
+            .expect("Error when locking water container");
+        let cocoa_1 = coffee_maker_1
+            .containers
+            .get_quantity_of(&"cocoa".to_string())
+            .expect("Error when locking cocoa container");
+
         assert_ne!(coffee_0, coffee_1);
-        let water_0 = coffee_maker_0.clone().containers.all["water"]
-            .read()
-            .expect("Coffee maker 0 cant have read lock of the water container")
-            .quantity;
-        let water_1 = coffee_maker_1.clone().containers.all["water"]
-            .read()
-            .expect("Coffee maker 1 cant have read lock of the water container")
-            .quantity;
         assert_ne!(water_0, water_1);
-        let cocoa_0 = coffee_maker_0.clone().containers.all["cocoa"]
-            .read()
-            .expect("Coffee maker 0 cant have read lock of the cocoa container")
-            .quantity;
-        let cocoa_1 = coffee_maker_1.clone().containers.all["cocoa"]
-            .read()
-            .expect("Coffee maker 1 cant have read lock of the cocoa container")
-            .quantity;
         assert_ne!(cocoa_0, cocoa_1);
-        let foam_0 = coffee_maker_0.clone().containers.all["foam"]
-            .read()
-            .expect("Coffee maker 0 cant have read lock of the foam container")
-            .quantity;
-        let foam_1 = coffee_maker_1.clone().containers.all["foam"]
-            .read()
-            .expect("Coffee maker 1 cant have read lock of the foam container")
-            .quantity;
         assert_ne!(foam_0, foam_1);
     }
 }

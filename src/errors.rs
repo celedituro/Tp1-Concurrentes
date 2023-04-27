@@ -5,7 +5,7 @@ pub enum Error {
     WrongFileFormat,
     NotEnoughIngredient,
     NoMoreOrders,
-    CantWriteContainerLock,
     CantWriteOrdersLock,
-    CantReadContainersLock,
+    CantHaveContainerLock,
+    CantReadOrdersLock,
 }
