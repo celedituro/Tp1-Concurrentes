@@ -6,7 +6,7 @@ use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
 const DISPENSERS: u32 = 4;
-const MIN_VALUE_TO_REPLENISH: u32 = 20;
+const MIN_VALUE_TO_REPLENISH: u32 = 25;
 const REPLENISH_VALUE: u32 = 50;
 
 #[derive(Clone)]
@@ -32,8 +32,51 @@ impl CoffeeMaker {
         }
     }
 
-    // Makes the dispensers to work
-    pub fn work(
+    fn handle_order(
+        self,
+        orders: Arc<RwLock<Vec<Order>>>,
+        dispenser_id: u32,
+        orders_processed: Arc<(Mutex<i32>, Condvar)>,
+    ) {
+        match process_order(orders, self.clone(), dispenser_id, orders_processed) {
+            Ok(_) => println!(
+                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
+                dispenser_id, self.id
+            ),
+            Err(error) => {
+                match error {
+                    Error::NotEnoughIngredient => {
+                        println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE INGREDIENTS", dispenser_id, self.id)
+                    }
+                    Error::NoMoreOrders => {
+                        println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS",
+                            dispenser_id, self.id
+                        );
+                    }
+                    Error::CantWriteContainerLock => {
+                        println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK",
+                            dispenser_id, self.id
+                        );
+                    }
+                    Error::CantWriteOrdersLock => {
+                        println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK",
+                            dispenser_id, self.id
+                        );
+                    }
+                    _ => println!(
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ABORTING FOR {:?}",
+                        dispenser_id, self.id, error
+                    ),
+                }
+            }
+        }
+    }
+
+    // Makes the dispensers to start making orders
+    pub fn start(
         self,
         orders: &Arc<RwLock<Vec<Order>>>,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
@@ -46,36 +89,9 @@ impl CoffeeMaker {
             let handle = thread::spawn(move || {
                 println!(
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING",
-                    i,
-                    coffee_machine.clone().id
+                    i, self.id
                 );
-                match process_order(orders, coffee_machine.clone(), i, orders_processed) {
-                    Ok(_) => println!(
-                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINALIZING",
-                        i,
-                        coffee_machine.clone().id
-                    ),
-                    Err(error) => {
-                        match error {
-                            Error::NotEnoughIngredient => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE INGREDIENTS", i, coffee_machine.clone().id)
-                            }
-                            Error::NoMoreOrders => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: THERE ARE NO MORE ORDERS", i, coffee_machine.clone().id);
-                            }
-                            Error::CantWriteContainerLock => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK", i, coffee_machine.clone().id);
-                            }
-                            Error::CantWriteOrdersLock => {
-                                println!("[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK", i, coffee_machine.clone().id);
-                            }
-                            _ => println!(
-                                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ABORTING FOR {:?}",
-                                i, coffee_machine.id, error
-                            ),
-                        }
-                    }
-                }
+                coffee_machine.handle_order(orders, i, orders_processed);
             });
             dispensers.push(handle);
         }
@@ -146,8 +162,8 @@ mod tests {
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders, orders_processed)
-            .expect("Error when working");
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
 
         let coffee = coffee_maker.clone().containers.all["coffee"]
             .read()
@@ -184,8 +200,8 @@ mod tests {
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders, orders_processed)
-            .expect("Error when working");
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
 
         let coffee = coffee_maker.clone().containers.all["coffee"]
             .read()
@@ -222,8 +238,8 @@ mod tests {
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders, orders_processed)
-            .expect("Error when working");
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
 
         let grain_coffee = coffee_maker.clone().containers.all["grain_coffee"]
             .read()
@@ -250,8 +266,8 @@ mod tests {
         let coffee_maker = CoffeeMaker::new(0, 100);
         coffee_maker
             .clone()
-            .work(&orders, orders_processed)
-            .expect("Error when working");
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
 
         let milk = coffee_maker.clone().containers.all["milk"]
             .read()

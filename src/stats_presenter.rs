@@ -18,7 +18,7 @@ pub mod presenter {
         level_of_containers
     }
 
-    pub fn get_info_of(coffee_makers: Vec<CoffeeMaker>) -> Vec<HashMap<String, u32>> {
+    pub fn get_containers_info(coffee_makers: Vec<CoffeeMaker>) -> Vec<HashMap<String, u32>> {
         let mut vec = Vec::new();
         for coffee_maker in coffee_makers {
             vec.push(get_quantity_of(coffee_maker.containers));
@@ -77,7 +77,7 @@ pub mod presenter {
         current_num_orders: u32,
         initial_quantity: u32,
     ) {
-        let containers_level = get_info_of(coffee_makers);
+        let containers_level = get_containers_info(coffee_makers);
         present_level_of_containers(containers_level.clone());
         println!("[TOTAL ORDERS PROCESSED]: {:?}", current_num_orders);
         let ingredients_consumed = get_ingredients_consumed(containers_level, initial_quantity);

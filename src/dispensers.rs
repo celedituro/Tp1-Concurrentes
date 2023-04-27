@@ -48,7 +48,7 @@ pub mod dispenser {
         if let Ok(mut num_orders_processed) = orders_processed_lock.lock() {
             *num_orders_processed += 1;
             println!(
-                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ACTUALIZANDO NUM ORDERS PROCESSED: {:?}",
+                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: UPDATING NUM ORDERS PROCESSED: {:?}",
                 dispenser_id, coffee_maker_id, num_orders_processed
             );
             condvar.notify_one();
