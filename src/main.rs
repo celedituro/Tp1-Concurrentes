@@ -40,7 +40,7 @@ fn main() -> Result<(), Error> {
     }
 
     let coffee_makers = coffee_makers.clone();
-    let join_handle = thread::spawn(move || loop {
+    let presenter_handle = thread::spawn(move || loop {
         println!("[PRESENTER]: MAKING STATS");
         let (orders_processed_lock, condvar) = &*orders_processed;
         if let Ok(orders_processed) = orders_processed_lock.lock() {
@@ -62,14 +62,17 @@ fn main() -> Result<(), Error> {
         thread::sleep(Duration::from_secs(1));
     });
 
-    join_handle.join().unwrap();
-
     for handle in machines {
         match handle.join() {
             Ok(_) => println!("[COFFEE MAKER]: FINALIZING"),
             Err(_) => println!("[COFFEE MAKER]: ERROR WHEN JOINING"),
         }
     }
+
+    match presenter_handle.join() {
+        Ok(_) => println!("[PRESENTER]: FINALIZING"),
+        Err(_) => println!("[PRESENTER]: ERROR WHEN JOINING"),
+    };
 
     Ok(())
 }
