@@ -1,79 +1,72 @@
 use crate::containers::Containers;
-use crate::ingredient_handler::IHandler;
+//use crate::ingredient_handler::IHandler;
 use crate::orders_handler::order_handler::process_order;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
 const DISPENSERS: u32 = 4;
-const COFFEE: &str = "coffee";
-//const WATER: &str = "water";
-//const FOAM: &str = "foam";
-const MIN_VALUE_TO_REPLENISH: u32 = 20;
+// const COFFEE: &str = "coffee";
+// const WATER: &str = "water";
+// const FOAM: &str = "foam";
+// const MIN_VALUE_TO_REPLENISH: u32 = 20;
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
     pub id: u32,
     pub containers: Containers,
-    handler: IHandler,
+    //handler: IHandler,
 }
 
 impl CoffeeMaker {
     // Creates a coffee maker with its container of ingredients and its id
-    pub fn new(id_value: u32, initial_quantity: u32, replenish_value: u32) -> CoffeeMaker {
+    pub fn new(id_value: u32, initial_quantity: u32, _replenish_value: u32) -> CoffeeMaker {
         let containers = Containers::new(initial_quantity);
         CoffeeMaker {
             id: id_value,
             containers: containers.clone(),
-            handler: IHandler::new(containers, id_value, replenish_value),
+            //handler: IHandler::new(containers, id_value, replenish_value),
         }
     }
 
-    fn replenish_ingredient(mut self, ingredient: String, id: u32) -> Result<(), Error> {
-        println!(
-            "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: CHECKING FOR {:?}",
-            id, ingredient
-        );
-        let mut has_to_replenish = false;
-        let (container_lock, condvar) = &*self.containers.all[&ingredient];
-        if let Ok(container) = container_lock.lock() {
-            println!(
-                "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: WAITING FOR {:?} TO REPLENISH",
-                id, ingredient
-            );
-            if let Ok(_container) =
-                condvar.wait_while(container, |c| c.quantity > MIN_VALUE_TO_REPLENISH)
-            {
-                has_to_replenish = true;
-            }
-        }
-        condvar.notify_all();
+    // fn replenish_ingredient(mut self, ingredient: String, id: u32) -> Result<(), Error> {
+    //     println!(
+    //         "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: CHECKING FOR {:?}",
+    //         id, ingredient
+    //     );
+    //     let mut has_to_replenish = false;
+    //     let (container_lock, condvar) = &*self.containers.all[&ingredient];
+    //     if let Ok(container) = container_lock.lock() {
+    //         println!(
+    //             "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: WAITING FOR {:?} TO REPLENISH",
+    //             id, ingredient
+    //         );
+    //         if let Ok(_container) =
+    //             condvar.wait_while(container, |c| c.quantity > MIN_VALUE_TO_REPLENISH)
+    //         {
+    //             has_to_replenish = true;
+    //         }
+    //     }
+    //     condvar.notify_all();
 
-        if has_to_replenish {
-            self.handler.replenish(ingredient.clone())?;
-        }
+    //     if has_to_replenish {
+    //         self.handler.replenish(ingredient.clone())?;
+    //     }
 
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
-    fn check_for_ingredients(self, orders: Arc<RwLock<Vec<Order>>>, id: u32) -> Result<(), Error> {
-        if let Ok(orders) = orders.read() {
-            if orders.is_empty() {
-                println!("[INGREDIENT HANDLER]: FINISHING SINCE NO MORE ORDERS");
-                return Err(Error::CantReadOrdersLock);
-            }
-        }
+    // fn check_for_ingredients(self, id: u32) -> Result<(), Error> {
+    //     println!(
+    //         "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: CHECKING FOR INGREDIENTS",
+    //         id
+    //     );
+    //     self.clone().replenish_ingredient(COFFEE.to_owned(), id).unwrap();
+    //     //self.clone().replenish_ingredient(WATER.to_owned(), id).unwrap();
+    //     //self.clone().replenish_ingredient(FOAM.to_owned(), id).unwrap();
 
-        println!(
-            "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: CHECKING FOR INGREDIENTS",
-            id
-        );
-        self.replenish_ingredient(COFFEE.to_owned(), id).unwrap();
-        //self.clone().replenish_ingredient(WATER.to_owned(), id).unwrap();
-        //self.clone().replenish_ingredient(FOAM.to_owned(), id).unwrap();
-
-        Ok(())
-    }
+    //     Ok(())
+    // }
 
     fn handle_order(
         self,
@@ -142,19 +135,24 @@ impl CoffeeMaker {
             dispensers.push(handle);
         }
 
-        let orders = orders.clone();
-        let coffee_machine = self.clone();
-        let ihandle = thread::spawn(move || {
-            match coffee_machine.check_for_ingredients(orders.clone(), self.id) {
-                Ok(_) => println!("[INGREDIENT HANDLER]: FINISHING"),
-                Err(error) => println!("[INGREDIENT HANDLER]: ERROR {:?}", error),
-            }
-        });
+        // let orders = orders.clone();
+        // let coffee_machine = self.clone();
+        // let ihandle = thread::spawn(move || {
+        //     if let Ok(orders) = orders.read() {
+        //         if orders.is_empty() {
+        //             println!("[INGREDIENT HANDLER]: FINISHING SINCE NO MORE ORDERS");
+        //         }
+        //     }
+        //     match coffee_machine.clone().check_for_ingredients(self.id) {
+        //         Ok(_) => println!("[INGREDIENT HANDLER]: FINISHING"),
+        //         Err(error) => println!("[INGREDIENT HANDLER]: ERROR {:?}", error),
+        //     }
+        // });
 
-        match ihandle.join() {
-            Ok(_) => println!("[INGREDIENT HANDLER]: FINISHING"),
-            Err(_) => println!("[INGREDIENT HANDLER]: ERROR WHEN JOINING"),
-        };
+        // match ihandle.join() {
+        //     Ok(_) => println!("[INGREDIENT HANDLER]: FINISHING"),
+        //     Err(_) => println!("[INGREDIENT HANDLER]: ERROR WHEN JOINING"),
+        // };
 
         for handle in dispensers {
             match handle.join() {
