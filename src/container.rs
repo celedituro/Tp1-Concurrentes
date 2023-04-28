@@ -19,7 +19,7 @@ impl Container {
     pub fn dispense(
         &mut self,
         value: u32,
-        dispenser_id: u32,
+        dispenser_id: Option<u32>,
         coffee_maker_id: u32,
     ) -> Result<(), Error> {
         println!(
@@ -61,7 +61,7 @@ mod tests {
     fn test01_get_a_value_lower_than_its_quantity_and_update_its_quantity() {
         let mut container = Container::new("coffe".to_string(), 10);
         container
-            .dispense(5, 0, 0)
+            .dispense(5, Some(0), 0)
             .expect("There is not enough ingredient to make the order");
         let quantity_expected = 5;
         assert_eq!(container.quantity, quantity_expected);
@@ -71,7 +71,7 @@ mod tests {
     fn test02_get_a_value_equal_than_its_quantity_and_update_its_quantity() {
         let mut container = Container::new("coffe".to_string(), 10);
         container
-            .dispense(10, 0, 0)
+            .dispense(10, Some(0), 0)
             .expect("There is not enough ingredient to make the order");
         let quantity_expected = 0;
         assert_eq!(container.quantity, quantity_expected);
@@ -81,7 +81,7 @@ mod tests {
     fn test03_get_a_value_greater_than_its_quantity_and_returns_an_error() {
         let mut container = Container::new("coffe".to_string(), 10);
         let error_got = container
-            .dispense(15, 0, 0)
+            .dispense(15, Some(0), 0)
             .expect_err("There is not enough ingredient to make the order");
         let error_expected = Error::NotEnoughIngredient;
         assert_eq!(error_got, error_expected);

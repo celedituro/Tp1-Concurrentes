@@ -43,26 +43,23 @@ impl IHandler {
                 "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: EXTRACTING FROM {:?} CONTAINER",
                 self.coffee_maker_id, resource
             );
-            let (resource_container_lock, condvar) = &*self.containers.all[resource];
-            if let Ok(mut resource_container) = resource_container_lock.lock() {
-                resource_container.dispense(self.values[&ingredient].1, 0, self.coffee_maker_id)?;
-            } else {
-                return Err(Error::CantHaveContainerLock);
-            }
-            condvar.notify_all();
+            self.containers.clone().get_ingredient(
+                resource,
+                self.values[&ingredient].1,
+                None,
+                self.coffee_maker_id,
+            )?;
         }
 
         println!(
             "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
             self.coffee_maker_id, ingredient
         );
-        let (ingredient_container_lock, condvar) = &*self.containers.all[&ingredient];
-        if let Ok(mut ingredient_container) = ingredient_container_lock.lock() {
-            ingredient_container.replenish(self.values[&ingredient].1, self.coffee_maker_id)?;
-        } else {
-            return Err(Error::CantHaveContainerLock);
-        }
-        condvar.notify_all();
+        self.containers.clone().replenish_ingredient(
+            &ingredient,
+            self.values[&ingredient].1,
+            self.coffee_maker_id,
+        )?;
 
         Ok(())
     }

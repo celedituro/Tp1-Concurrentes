@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, Condvar, Mutex},
+    sync::{Arc, RwLock},
 };
 
 use crate::{container::Container, errors::Error};
@@ -14,7 +14,7 @@ const MILK: &str = "milk";
 
 #[derive(Debug, Clone)]
 pub struct Containers {
-    pub all: HashMap<String, Arc<(Mutex<Container>, Condvar)>>,
+    pub all: HashMap<String, Arc<RwLock<Container>>>,
 }
 
 impl Containers {
@@ -23,45 +23,30 @@ impl Containers {
         let mut containers = HashMap::new();
         containers.insert(
             COFFEE.to_owned(),
-            Arc::new((
-                Mutex::new(Container::new(COFFEE.to_owned(), max_value)),
-                Condvar::new(),
-            )),
+            Arc::new(RwLock::new(Container::new(COFFEE.to_owned(), max_value))),
         );
         containers.insert(
             WATER.to_owned(),
-            Arc::new((
-                Mutex::new(Container::new(WATER.to_owned(), max_value)),
-                Condvar::new(),
-            )),
+            Arc::new(RwLock::new(Container::new(WATER.to_owned(), max_value))),
         );
         containers.insert(
             COCOA.to_owned(),
-            Arc::new((
-                Mutex::new(Container::new(COCOA.to_owned(), max_value)),
-                Condvar::new(),
-            )),
+            Arc::new(RwLock::new(Container::new(COCOA.to_owned(), max_value))),
         );
         containers.insert(
             FOAM.to_owned(),
-            Arc::new((
-                Mutex::new(Container::new(FOAM.to_owned(), max_value)),
-                Condvar::new(),
-            )),
+            Arc::new(RwLock::new(Container::new(FOAM.to_owned(), max_value))),
         );
         containers.insert(
             GRAIN_COFFEE.to_owned(),
-            Arc::new((
-                Mutex::new(Container::new(GRAIN_COFFEE.to_owned(), max_value)),
-                Condvar::new(),
-            )),
+            Arc::new(RwLock::new(Container::new(
+                GRAIN_COFFEE.to_owned(),
+                max_value,
+            ))),
         );
         containers.insert(
             MILK.to_owned(),
-            Arc::new((
-                Mutex::new(Container::new(MILK.to_owned(), max_value)),
-                Condvar::new(),
-            )),
+            Arc::new(RwLock::new(Container::new(MILK.to_owned(), max_value))),
         );
 
         Containers { all: containers }
@@ -72,20 +57,29 @@ impl Containers {
         self,
         ingredient: &String,
         value: u32,
-        dispenser_id: u32,
+        dispenser_id: Option<u32>,
         coffee_maker_id: u32,
     ) -> Result<(), Error> {
-        let (container_lock, condvar) = &*self.all[ingredient];
-        if let Ok(mut container) = container_lock.lock() {
+        if let Ok(mut container) = self.all[ingredient].write() {
             container.dispense(value, dispenser_id, coffee_maker_id)?;
         } else {
-            println!(
-                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE CONTAINERS LOCK",
-                dispenser_id, coffee_maker_id
-            );
-            return Err(Error::CantHaveContainerLock);
+            return Err(Error::CantWriteContainerLock);
         }
-        condvar.notify_all();
+
+        Ok(())
+    }
+
+    pub fn replenish_ingredient(
+        self,
+        ingredient: &String,
+        value: u32,
+        coffee_maker_id: u32,
+    ) -> Result<(), Error> {
+        if let Ok(mut container) = self.all[ingredient].write() {
+            container.replenish(value, coffee_maker_id)?;
+        } else {
+            return Err(Error::CantWriteContainerLock);
+        }
 
         Ok(())
     }
@@ -93,14 +87,12 @@ impl Containers {
     // Gets the quantity of an ingredient
     pub fn get_quantity_of(&self, ingredient: &String) -> Result<u32, Error> {
         let quantity;
-        let (container_lock, condvar) = &*self.all[ingredient];
-        if let Ok(container) = container_lock.lock() {
+        if let Ok(container) = self.all[ingredient].read() {
             quantity = container.quantity;
         } else {
-            return Err(Error::CantHaveContainerLock);
+            return Err(Error::CantReadContainerLock);
         }
-        condvar.notify_all();
-        println!("LIBERATING CONTAINER LOCK");
+
         Ok(quantity)
     }
 }

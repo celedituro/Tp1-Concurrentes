@@ -18,28 +18,28 @@ pub mod dispenser {
         containers.clone().get_ingredient(
             &COFFEE.to_owned(),
             order.coffee,
-            dispenser_id,
+            Some(dispenser_id),
             coffee_maker_id,
         )?;
 
         containers.clone().get_ingredient(
             &WATER.to_owned(),
             order.water,
-            dispenser_id,
+            Some(dispenser_id),
             coffee_maker_id,
         )?;
 
         containers.clone().get_ingredient(
             &FOAM.to_owned(),
             order.foam,
-            dispenser_id,
+            Some(dispenser_id),
             coffee_maker_id,
         )?;
 
         containers.get_ingredient(
             &COCOA.to_owned(),
             order.cocoa,
-            dispenser_id,
+            Some(dispenser_id),
             coffee_maker_id,
         )?;
 
