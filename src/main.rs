@@ -11,6 +11,7 @@ use tp1::stats_presenter::presenter::present_stats;
 const COFFEE_MAKERS: u32 = 2;
 const INITIAL_QUANTITY: u32 = 100;
 const VALUE_TO_REPLENISH: u32 = 50;
+const MIN_VALUE_TO_REPLENISH: u32 = 10;
 
 fn show_stats(coffee_makers: Vec<CoffeeMaker>, orders_processed: Arc<(Mutex<i32>, Condvar)>) {
     let (orders_processed_lock, condvar) = &*orders_processed;
@@ -54,7 +55,7 @@ fn present_statistics(
 fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
-        coffee_makers.push(CoffeeMaker::new(j, INITIAL_QUANTITY, VALUE_TO_REPLENISH));
+        coffee_makers.push(CoffeeMaker::new(j, INITIAL_QUANTITY, VALUE_TO_REPLENISH, MIN_VALUE_TO_REPLENISH));
     }
 
     coffee_makers
@@ -117,7 +118,7 @@ mod tests {
 
         let mut coffee_makers = Vec::new();
         for j in 0..2 {
-            coffee_makers.push(CoffeeMaker::new(j, 100, 50));
+            coffee_makers.push(CoffeeMaker::new(j, 100, 50, 20));
         }
         let orders = Arc::new(RwLock::new(orders_list));
 

@@ -1,4 +1,5 @@
 use crate::containers::Containers;
+use crate::ingredient_handler::IHandler;
 use crate::orders_handler::order_handler::process_order;
 use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
@@ -10,14 +11,17 @@ const DISPENSERS: u32 = 4;
 pub struct CoffeeMaker {
     pub id: u32,
     pub containers: Containers,
+    pub handler: IHandler,
 }
 
 impl CoffeeMaker {
     /// Creates a new [`CoffeeMaker`].
-    pub fn new(id_value: u32, initial_quantity: u32, _replenish_value: u32) -> CoffeeMaker {
+    pub fn new(id_value: u32, initial_quantity: u32, replenish_value: u32, min_value_to_replenish: u32) -> CoffeeMaker {
+        let c = Containers::new(initial_quantity);
         CoffeeMaker {
             id: id_value,
-            containers: Containers::new(initial_quantity),
+            containers: c.clone(),
+            handler: IHandler::new(c, id_value, replenish_value, min_value_to_replenish)
         }
     }
 
@@ -63,6 +67,8 @@ impl CoffeeMaker {
             dispensers.push(handle);
         }
 
+        //self.handler.check_for_ingredients();
+
         for handle in dispensers {
             match handle.join() {
                 Ok(_) => println!(
@@ -90,7 +96,7 @@ mod tests {
 
     #[test]
     fn test01_get_an_order_that_cant_be_completed() {
-        let coffee_maker = CoffeeMaker::new(0, 100, 50);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
         let order = Order::new(110, 100, 100, 100);
         let mut orders_list = Vec::new();
         orders_list.push(order);
@@ -106,7 +112,7 @@ mod tests {
 
     #[test]
     fn test02_get_an_order_when_there_are_no_orders() {
-        let coffee_maker = CoffeeMaker::new(0, 100, 50);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
         let orders_list = Vec::new();
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
@@ -126,7 +132,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -165,7 +171,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
