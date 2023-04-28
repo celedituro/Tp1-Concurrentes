@@ -1,61 +1,25 @@
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
 use tp1::coffee_maker::CoffeeMaker;
 use tp1::errors::Error;
 use tp1::input_controller::InputController;
-use tp1::orders::Order;
-use tp1::stats_presenter::presenter::present_stats;
+use tp1::stats_presenter::presenter::show_statistics;
 
-const COFFEE_MAKERS: u32 = 2;
-const INITIAL_QUANTITY: u32 = 100;
+const COFFEE_MAKERS: u32 = 5;
 const VALUE_TO_REPLENISH: u32 = 50;
 const MIN_VALUE_TO_REPLENISH: u32 = 10;
-
-fn show_stats(coffee_makers: Vec<CoffeeMaker>, orders_processed: Arc<(Mutex<i32>, Condvar)>) {
-    let (orders_processed_lock, condvar) = &*orders_processed;
-    if let Ok(orders_processed) = orders_processed_lock.lock() {
-        println!("[PRESENTER]: WAITING");
-        if let Ok(orders_processed) = condvar.wait_while(orders_processed, |num| *num == 0) {
-            println!("PRESENTING STATS WITH NUM ORDERS: {:?}", orders_processed);
-            present_stats(
-                coffee_makers.clone(),
-                *orders_processed as u32,
-                INITIAL_QUANTITY * coffee_makers.len() as u32,
-            );
-        }
-    }
-    condvar.notify_all();
-}
-
-fn present_statistics(
-    coffee_makers: Vec<CoffeeMaker>,
-    orders_processed: Arc<(Mutex<i32>, Condvar)>,
-    orders: Arc<RwLock<Vec<Order>>>,
-) {
-    let presenter_handle = thread::spawn(move || loop {
-        println!("[PRESENTER]: PREPARING STATS");
-        show_stats(coffee_makers.clone(), orders_processed.clone());
-        if let Ok(orders) = orders.read() {
-            if orders.is_empty() {
-                println!("[PRESENTER]: FINISHING SINCE NO MORE ORDERS");
-                break;
-            }
-        }
-        thread::sleep(Duration::from_secs(1));
-    });
-
-    match presenter_handle.join() {
-        Ok(_) => println!("[PRESENTER]: FINISHING"),
-        Err(_) => println!("[PRESENTER]: ERROR WHEN JOINING"),
-    };
-}
+const INITIAL_QUANTITY: u32 = 100;
 
 fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
-        coffee_makers.push(CoffeeMaker::new(j, INITIAL_QUANTITY, VALUE_TO_REPLENISH, MIN_VALUE_TO_REPLENISH));
+        coffee_makers.push(CoffeeMaker::new(
+            j,
+            INITIAL_QUANTITY,
+            VALUE_TO_REPLENISH,
+            MIN_VALUE_TO_REPLENISH,
+        ));
     }
 
     coffee_makers
@@ -86,7 +50,7 @@ fn main() -> Result<(), Error> {
         machines.push(handle);
     }
 
-    present_statistics(coffee_makers, orders_processed, orders);
+    show_statistics(coffee_makers, orders_processed, orders)?;
 
     for handle in machines {
         match handle.join() {

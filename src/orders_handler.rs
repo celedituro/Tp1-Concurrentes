@@ -34,6 +34,7 @@ pub mod order_handler {
         coffee_maker: CoffeeMaker,
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
+        has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<(), Error> {
         loop {
             match get_order(orders.clone(), dispenser_id, coffee_maker.id) {
@@ -44,10 +45,10 @@ pub mod order_handler {
                     );
                     make_order(
                         order,
-                        coffee_maker.containers.clone(),
+                        coffee_maker.clone(),
                         dispenser_id,
-                        coffee_maker.id,
                         orders_processed.clone(),
+                        has_to_replenish_coffee.clone(),
                     )?;
                 }
                 Err(error) => return Err(error),
