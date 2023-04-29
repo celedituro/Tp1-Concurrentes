@@ -103,15 +103,17 @@ impl IHandler {
 
     /// Increments the quantity of the ingredient.
     pub fn replenish_ingredient(&mut self, ingredient: &String) -> Result<(), Error> {
-        println!(
-            "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
-            self.coffee_maker_id, ingredient
-        );
-        self.containers.clone().replenish_ingredient(
-            ingredient,
-            self.values[ingredient].1,
-            self.coffee_maker_id,
-        )?;
+        if self.clone().has_to_replenish(ingredient)? {
+            println!(
+                "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
+                self.coffee_maker_id, ingredient
+            );
+            self.containers.clone().replenish_ingredient(
+                ingredient,
+                self.values[ingredient].1,
+                self.coffee_maker_id,
+            )?;
+        }
 
         Ok(())
     }

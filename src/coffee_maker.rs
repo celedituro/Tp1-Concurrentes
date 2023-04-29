@@ -45,16 +45,6 @@ impl CoffeeMaker {
             self.id
         );
         let handle = thread::spawn(move || loop {
-            if let Ok(orders) = orders.read() {
-                if orders.is_empty() {
-                    println!(
-                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: NO MORE ORDERS",
-                        self.id
-                    );
-                    break;
-                }
-            }
-
             match self
                 .handler
                 .do_replenish(&COFFEE.to_string(), has_to_replenish_coffee.clone())
@@ -67,6 +57,15 @@ impl CoffeeMaker {
                     println!(
                         "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: ERROR {:?}",
                         self.id, error
+                    );
+                    break;
+                }
+            }
+            if let Ok(orders) = orders.read() {
+                if orders.is_empty() {
+                    println!(
+                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: NO MORE ORDERS",
+                        self.id
                     );
                     break;
                 }
@@ -188,7 +187,7 @@ mod tests {
             .start(&orders, orders_processed)
             .expect("Error when starting");
 
-        let _coffee_got = coffee_maker
+        let coffee_got = coffee_maker
             .containers
             .get_quantity_of(&"coffee".to_string())
             .expect("Error when locking coffee container");
@@ -205,7 +204,7 @@ mod tests {
             .get_quantity_of(&"cocoa".to_string())
             .expect("Error when locking cocoa container");
 
-        //assert_eq!(coffee_got, 90);
+        assert_eq!(coffee_got, 90);
         assert_eq!(foam_got, 95);
         assert_eq!(water_got, 90);
         assert_eq!(cocoa_got, 95);
@@ -227,7 +226,7 @@ mod tests {
             .start(&orders, orders_processed)
             .expect("Error when starting");
 
-        let _coffee_got = coffee_maker
+        let coffee_got = coffee_maker
             .containers
             .get_quantity_of(&"coffee".to_string())
             .expect("Error when locking coffee container");
@@ -244,36 +243,43 @@ mod tests {
             .get_quantity_of(&"cocoa".to_string())
             .expect("Error when locking cocoa container");
 
-        //assert_eq!(coffee_got, 50);
+        assert_eq!(coffee_got, 50);
         assert_eq!(water_got, 50);
         assert_eq!(cocoa_got, 75);
         assert_eq!(foam_got, 75);
     }
 
+    #[test]
+    fn test04_get_more_coffee_and_decrease_quantity_of_grain_coffee_container() {
+        let mut orders_list = Vec::new();
+        let order = Order::new(10, 10, 5, 5);
+        for _ in 0..9 {
+            orders_list.push(order.clone());
+        }
+        let orders = Arc::new(RwLock::new(orders_list));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
+
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
+        coffee_maker
+            .clone()
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
+
+        let grain_coffee_got = coffee_maker
+            .containers
+            .get_quantity_of(&"grain_coffee".to_string())
+            .expect("Error when locking coffee container");
+        let coffee_got = coffee_maker
+            .containers
+            .get_quantity_of(&"coffee".to_string())
+            .expect("Error when locking coffee container");
+
+        assert_eq!(grain_coffee_got, 50);
+        assert_eq!(coffee_got, 60);
+    }
+
     // #[test]
-    // fn test05_get_more_coffee_and_decrease_quantity_of_grain_coffee_container() {
-    //     let mut orders_list = Vec::new();
-    //     let order = Order::new(20, 10, 5, 5);
-    //     for _ in 0..6 {
-    //         orders_list.push(order.clone());
-    //     }
-    //     let orders = Arc::new(RwLock::new(orders_list));
-    //     let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
-
-    //     let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
-    //     coffee_maker
-    //         .clone()
-    //         .start(&orders, orders_processed)
-    //         .expect("Error when starting");
-
-    //     let grain_coffee_got = coffee_maker.containers.get_quantity_of(&"grain_coffee".to_string())
-    //         .expect("Error when locking coffee container");
-
-    //     assert_eq!(grain_coffee_got, 50);
-    // }
-
-    // #[test]
-    // fn test06_get_more_foam_and_decrease_quantity_of_milk_container() {
+    // fn test05_get_more_foam_and_decrease_quantity_of_milk_container() {
     //     let mut orders_list = Vec::new();
     //     let order = Order::new(5, 10, 5, 10);
     //     for _ in 0..10 {
