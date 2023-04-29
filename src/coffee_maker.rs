@@ -8,7 +8,7 @@ use std::thread::{self, JoinHandle};
 const DISPENSERS: u32 = 5;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
-// const WATER: &str = "water";
+const WATER: &str = "water";
 // const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, WATER, FOAM];
 
 #[derive(Clone)]
@@ -97,6 +97,8 @@ impl CoffeeMaker {
             Arc::new((Mutex::new(false), Condvar::new()));
         let has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)> =
             Arc::new((Mutex::new(false), Condvar::new()));
+        let has_to_replenish_water: Arc<(Mutex<bool>, Condvar)> =
+            Arc::new((Mutex::new(false), Condvar::new()));
 
         let mut dispensers: Vec<JoinHandle<Result<(), Error>>> = Vec::new();
         for i in 0..DISPENSERS {
@@ -104,6 +106,7 @@ impl CoffeeMaker {
             let orders_processed = orders_processed.clone();
             let has_to_replenish_coffee = has_to_replenish_coffee.clone();
             let has_to_replenish_foam = has_to_replenish_foam.clone();
+            let has_to_replenish_water = has_to_replenish_water.clone();
             let coffee_machine = self.clone();
 
             let handle = thread::spawn(move || {
@@ -118,6 +121,7 @@ impl CoffeeMaker {
                     orders_processed,
                     has_to_replenish_coffee,
                     has_to_replenish_foam,
+                    has_to_replenish_water,
                 )?;
                 Ok(())
             });
@@ -134,6 +138,11 @@ impl CoffeeMaker {
             Arc::clone(orders),
             has_to_replenish_foam,
             FOAM.to_string(),
+        )?;
+        self.clone().handle_replenish(
+            Arc::clone(orders),
+            has_to_replenish_water,
+            WATER.to_string(),
         )?;
 
         for handle in dispensers {
@@ -168,6 +177,8 @@ mod tests {
             Arc::new((Mutex::new(false), Condvar::new()));
         let has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)> =
             Arc::new((Mutex::new(false), Condvar::new()));
+        let has_to_replenish_water: Arc<(Mutex<bool>, Condvar)> =
+            Arc::new((Mutex::new(false), Condvar::new()));
 
         let result = process_order(
             orders,
@@ -176,6 +187,7 @@ mod tests {
             orders_processed,
             has_to_replenish_coffee,
             has_to_replenish_foam,
+            has_to_replenish_water,
         )
         .expect_err("There are no more orders");
         let err_expected = Error::NoMoreOrders;
@@ -316,8 +328,54 @@ mod tests {
         assert_eq!(foam, 60);
     }
 
+    #[test]
+    fn test06_get_more_water_and_increase_the_quantity_of_water_container() {
+        let mut orders_list = Vec::new();
+        let order = Order::new(5, 10, 5, 5);
+        for _ in 0..9 {
+            orders_list.push(order.clone());
+        }
+        let orders = Arc::new(RwLock::new(orders_list));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
+
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
+        coffee_maker
+            .clone()
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
+
+        let water: u32 = coffee_maker.clone().containers.all["water"]
+            .read()
+            .expect("Cant have read lock of the water container")
+            .quantity;
+        assert_eq!(water, 60);
+    }
+
+    #[test]
+    fn test07_replenish_value_of_water_is_greater_than_initial_quantity_and_can_replenish_water() {
+        let mut orders_list = Vec::new();
+        let order = Order::new(5, 10, 5, 5);
+        for _ in 0..9 {
+            orders_list.push(order.clone());
+        }
+        let orders = Arc::new(RwLock::new(orders_list));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
+
+        let coffee_maker = CoffeeMaker::new(0, 100, 150, 20);
+        coffee_maker
+            .clone()
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
+
+        let water: u32 = coffee_maker.clone().containers.all["water"]
+            .read()
+            .expect("Cant have read lock of the water container")
+            .quantity;
+        assert_eq!(water, 160);
+    }
+
     // #[test]
-    // fn test06_has_to_replenish_coffee_but_does_not_has_enough_grain_coffee() {
+    // fn test07_has_to_replenish_coffee_but_does_not_has_enough_grain_coffee() {
     //     let mut orders_list = Vec::new();
     //     let order = Order::new(50, 10, 5, 5);
     //     for _ in 0..6 {

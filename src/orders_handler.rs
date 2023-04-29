@@ -20,6 +20,7 @@ pub mod order_handler {
         orders: Arc<RwLock<Vec<Order>>>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
         has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish_water: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<Order, Error> {
         let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
@@ -27,6 +28,7 @@ pub mod order_handler {
             } else {
                 notify_to_replenish(has_to_replenish_coffee);
                 notify_to_replenish(has_to_replenish_foam);
+                notify_to_replenish(has_to_replenish_water);
 
                 return Err(Error::NoMoreOrders);
             }
@@ -46,12 +48,14 @@ pub mod order_handler {
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
         has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish_water: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<(), Error> {
         loop {
             match get_order(
                 orders.clone(),
                 has_to_replenish_coffee.clone(),
                 has_to_replenish_foam.clone(),
+                has_to_replenish_water.clone(),
             ) {
                 Ok(order) => {
                     println!(
@@ -65,6 +69,7 @@ pub mod order_handler {
                         orders_processed.clone(),
                         has_to_replenish_coffee.clone(),
                         has_to_replenish_foam.clone(),
+                        has_to_replenish_water.clone(),
                     ) {
                         Ok(_) => println!(
                             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINISHING ORDER",

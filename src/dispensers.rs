@@ -42,6 +42,7 @@ pub mod dispenser {
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
         has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish_water: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<(), Error> {
         match coffee_maker.containers.clone().get_ingredient(
             &COFFEE.to_owned(),
@@ -65,12 +66,27 @@ pub mod dispenser {
             },
         };
 
-        coffee_maker.containers.clone().get_ingredient(
+        match coffee_maker.containers.clone().get_ingredient(
             &WATER.to_owned(),
             order.water,
             Some(dispenser_id),
             coffee_maker.id,
-        )?;
+        ) {
+            Ok(_) => {
+                println!(
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT WATER",
+                    dispenser_id, coffee_maker.id
+                );
+                coffee_maker
+                    .handler
+                    .check_for_ingredient(WATER.to_owned(), has_to_replenish_water)?;
+            }
+
+            Err(err) => match err {
+                Error::NotEnoughIngredient => notify_to_replenish(has_to_replenish_water),
+                _ => return Err(err),
+            },
+        };
 
         match coffee_maker.containers.clone().get_ingredient(
             &FOAM.to_owned(),
@@ -80,7 +96,7 @@ pub mod dispenser {
         ) {
             Ok(_) => {
                 println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT COFFEE",
+                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT FOAM",
                     dispenser_id, coffee_maker.id
                 );
                 coffee_maker
