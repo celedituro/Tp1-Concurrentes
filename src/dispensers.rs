@@ -11,6 +11,27 @@ pub mod dispenser {
     const COCOA: &str = "cocoa";
     const FOAM: &str = "foam";
 
+    /// Increments the total num of orders processed and notifies it.
+    pub fn notify_one_order_has_been_processed(
+        orders_processed: Arc<(Mutex<i32>, Condvar)>,
+        dispenser_id: u32,
+        coffee_maker_id: u32,
+    ) -> Result<(), Error> {
+        let (orders_processed_lock, condvar) = &*orders_processed;
+        if let Ok(mut num_orders_processed) = orders_processed_lock.lock() {
+            *num_orders_processed += 1;
+            println!(
+                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS - NUM ORDERS PROCESSED: {:?}",
+                dispenser_id, coffee_maker_id, num_orders_processed
+            );
+        } else {
+            return Err(Error::CantHaveOrdersProcessedLock);
+        }
+
+        condvar.notify_all();
+        Ok(())
+    }
+
     /// Gets all the ingredients of the order.
     /// Also calls to the ingredient handler of its coffee machine to replenish
     /// ingredients if its necessary.
@@ -79,15 +100,7 @@ pub mod dispenser {
             coffee_maker.id,
         )?;
 
-        let (orders_processed_lock, condvar) = &*orders_processed;
-        if let Ok(mut num_orders_processed) = orders_processed_lock.lock() {
-            *num_orders_processed += 1;
-            println!(
-                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT ALL INGREDIENTS - NUM ORDERS PROCESSED: {:?}",
-                dispenser_id, coffee_maker.id, num_orders_processed
-            );
-        }
-        condvar.notify_all();
+        notify_one_order_has_been_processed(orders_processed, dispenser_id, coffee_maker.id)?;
 
         Ok(())
     }

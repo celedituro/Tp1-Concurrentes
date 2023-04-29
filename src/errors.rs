@@ -10,4 +10,5 @@ pub enum Error {
     CantWriteContainerLock,
     CantReadContainerLock,
     NoMoreIngredient,
+    CantHaveOrdersProcessedLock,
 }
