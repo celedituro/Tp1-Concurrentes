@@ -6,7 +6,7 @@ use tp1::errors::Error;
 use tp1::input_controller::InputController;
 use tp1::stats_presenter::presenter::show_statistics;
 
-const COFFEE_MAKERS: u32 = 5;
+const COFFEE_MAKERS: u32 = 3;
 const VALUE_TO_REPLENISH: u32 = 50;
 const MIN_VALUE_TO_REPLENISH: u32 = 10;
 const INITIAL_QUANTITY: u32 = 100;

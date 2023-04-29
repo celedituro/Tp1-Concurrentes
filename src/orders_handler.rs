@@ -8,17 +8,17 @@ pub mod order_handler {
     // Gets an order from the list of orders if there are more orders to make, returns an error if not
     fn get_order(
         orders: Arc<RwLock<Vec<Order>>>,
-        dispenser_id: u32,
-        coffee_maker_id: u32,
+        has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<Order, Error> {
         let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
                 orders.remove(0)
             } else {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: CANT HAVE ORDERS LOCK",
-                    dispenser_id, coffee_maker_id
-                );
+                let (has_to_replenish_coffee_lock, condvar) = &*has_to_replenish_coffee;
+                if let Ok(mut has_to_replenish_coffee) = has_to_replenish_coffee_lock.lock() {
+                    *has_to_replenish_coffee = true;
+                }
+                condvar.notify_all();
                 return Err(Error::NoMoreOrders);
             }
         } else {
@@ -37,21 +37,36 @@ pub mod order_handler {
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<(), Error> {
         loop {
-            match get_order(orders.clone(), dispenser_id, coffee_maker.id) {
+            match get_order(orders.clone(), has_to_replenish_coffee.clone()) {
                 Ok(order) => {
                     println!(
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
                         dispenser_id, coffee_maker.id, order
                     );
-                    make_order(
+                    match make_order(
                         order,
                         coffee_maker.clone(),
                         dispenser_id,
                         orders_processed.clone(),
                         has_to_replenish_coffee.clone(),
-                    )?;
+                    ) {
+                        Ok(_) => println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ORDER COMPLETED",
+                            dispenser_id, coffee_maker.id
+                        ),
+                        Err(err) => match err {
+                            Error::NotEnoughIngredient => {
+                                println!(
+                                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: {:?}",
+                                    dispenser_id, coffee_maker.id, err
+                                );
+                                continue;
+                            }
+                            _ => return Err(err),
+                        },
+                    };
                 }
-                Err(error) => return Err(error),
+                Err(err) => return Err(err),
             }
         }
     }

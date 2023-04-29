@@ -54,7 +54,7 @@ pub mod dispenser {
                 dispenser_id, coffee_maker.id, num_orders_processed
             );
         }
-        condvar.notify_one();
+        condvar.notify_all();
 
         Ok(())
     }

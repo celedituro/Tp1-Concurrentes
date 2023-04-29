@@ -124,6 +124,32 @@ impl IHandler {
 
         Ok(())
     }
+
+    pub fn handle_replenish(
+        &mut self,
+        ingredient: &String,
+        has_to_replenish: Arc<(Mutex<bool>, Condvar)>,
+    ) -> Result<(), Error> {
+        let (has_to_replenish_lock, condvar) = &*has_to_replenish;
+        if let Ok(has_to_replenish) = has_to_replenish_lock.lock() {
+            println!(
+                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: WAITING SINCE HAS TO REPLENISH {:?}",
+                self.coffee_maker_id, has_to_replenish
+            );
+            if let Ok(mut has_to_replenish) = condvar.wait_while(has_to_replenish, |value| !*value)
+            {
+                println!(
+                    "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: START REPLENISHING {:?}",
+                    self.coffee_maker_id, ingredient
+                );
+                self.replenish(ingredient)?;
+                *has_to_replenish = false;
+            }
+        }
+        condvar.notify_all();
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
