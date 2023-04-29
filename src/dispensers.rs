@@ -17,6 +17,7 @@ pub mod dispenser {
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<(), Error> {
         coffee_maker.containers.clone().get_ingredient(
             &COFFEE.to_owned(),
@@ -41,6 +42,9 @@ pub mod dispenser {
             Some(dispenser_id),
             coffee_maker.id,
         )?;
+        coffee_maker
+            .handler
+            .check_for_ingredient(FOAM.to_owned(), has_to_replenish_foam)?;
 
         coffee_maker.containers.get_ingredient(
             &COCOA.to_owned(),

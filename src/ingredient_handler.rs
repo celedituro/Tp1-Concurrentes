@@ -139,8 +139,8 @@ impl IHandler {
         let (has_to_replenish_lock, condvar) = &*has_to_replenish;
         if let Ok(has_to_replenish) = has_to_replenish_lock.lock() {
             println!(
-                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: WAITING SINCE HAS TO REPLENISH {:?}",
-                self.coffee_maker_id, has_to_replenish
+                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: WAITING SINCE HAS TO REPLENISH {:?} IS {:?}",
+                self.coffee_maker_id, ingredient, has_to_replenish
             );
             if let Ok(mut has_to_replenish) = condvar.wait_while(has_to_replenish, |value| !*value)
             {

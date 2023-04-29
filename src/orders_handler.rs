@@ -10,16 +10,23 @@ pub mod order_handler {
     fn get_order(
         orders: Arc<RwLock<Vec<Order>>>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<Order, Error> {
         let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
                 orders.remove(0)
             } else {
-                let (has_to_replenish_coffee_lock, condvar) = &*has_to_replenish_coffee;
+                let (has_to_replenish_coffee_lock, condvar_coffee) = &*has_to_replenish_coffee;
                 if let Ok(mut has_to_replenish_coffee) = has_to_replenish_coffee_lock.lock() {
                     *has_to_replenish_coffee = true;
                 }
-                condvar.notify_all();
+                condvar_coffee.notify_all();
+
+                let (has_to_replenish_foam_lock, condvar_foam) = &*has_to_replenish_foam;
+                if let Ok(mut has_to_replenish_foam) = has_to_replenish_foam_lock.lock() {
+                    *has_to_replenish_foam = true;
+                }
+                condvar_foam.notify_all();
                 return Err(Error::NoMoreOrders);
             }
         } else {
@@ -37,9 +44,14 @@ pub mod order_handler {
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
     ) -> Result<(), Error> {
         loop {
-            match get_order(orders.clone(), has_to_replenish_coffee.clone()) {
+            match get_order(
+                orders.clone(),
+                has_to_replenish_coffee.clone(),
+                has_to_replenish_foam.clone(),
+            ) {
                 Ok(order) => {
                     println!(
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",
@@ -51,6 +63,7 @@ pub mod order_handler {
                         dispenser_id,
                         orders_processed.clone(),
                         has_to_replenish_coffee.clone(),
+                        has_to_replenish_foam.clone(),
                     ) {
                         Ok(_) => println!(
                             "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ORDER COMPLETED",
