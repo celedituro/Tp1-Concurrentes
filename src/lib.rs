@@ -7,4 +7,5 @@ pub mod ingredient_handler;
 pub mod input_controller;
 pub mod orders;
 pub mod orders_handler;
+pub mod stat_maker;
 pub mod stats_presenter;

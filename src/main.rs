@@ -6,12 +6,12 @@ use tp1::errors::Error;
 use tp1::input_controller::InputController;
 use tp1::stats_presenter::presenter::show_statistics;
 
-const COFFEE_MAKERS: u32 = 3;
+const COFFEE_MAKERS: u32 = 2;
 const VALUE_TO_REPLENISH: u32 = 50;
 const MIN_VALUE_TO_REPLENISH: u32 = 10;
 const INITIAL_QUANTITY: u32 = 100;
 
-/// Returns a list of CoffeMaker.
+/// Returns a list of CoffeeMaker.
 fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {

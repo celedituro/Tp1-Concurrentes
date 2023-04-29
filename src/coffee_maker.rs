@@ -5,7 +5,7 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: u32 = 5;
+const DISPENSERS: u32 = 1;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
 const WATER: &str = "water";
