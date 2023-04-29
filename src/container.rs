@@ -7,7 +7,7 @@ pub struct Container {
 }
 
 impl Container {
-    // Creates a container with its ingredient's name and quantity
+    /// Creates a new [`Container`].
     pub fn new(ingredient: String, value: u32) -> Container {
         Container {
             name: ingredient,
@@ -15,7 +15,7 @@ impl Container {
         }
     }
 
-    // Updates the quantity of its ingredient if can, returns an error if not
+    /// Decrements the quantity of its ingredient if can, returns an error if not.
     pub fn dispense(
         &mut self,
         value: u32,

@@ -12,7 +12,7 @@ pub mod presenter {
     const INGREDIENTS: [&str; 6] = ["coffee", "water", "cocoa", "foam", "grain_coffee", "milk"];
     const INITIAL_QUANTITY: u32 = 100;
 
-    /// Gets the current quantity of all the containers of all the coffee machines
+    /// Gets the current quantity of all the containers of all the coffee machines.
     pub fn get_quantity_of(containers: Containers) -> HashMap<String, u32> {
         let mut level_of_containers = HashMap::new();
         for ingredient in INGREDIENTS {
@@ -24,6 +24,9 @@ pub mod presenter {
         level_of_containers
     }
 
+    /// Returns a list of hashmaps. Every element of the list represents a coffee machine
+    /// and every hashmap represents its container where the key is the ingredient of it and
+    /// the value is its quantity.
     pub fn get_containers_info(coffee_makers: Vec<CoffeeMaker>) -> Vec<HashMap<String, u32>> {
         let mut vec = Vec::new();
         for coffee_maker in coffee_makers {
@@ -34,7 +37,7 @@ pub mod presenter {
     }
 
     /// Shows the current quantity of ingredients consumed between all the containers of all the
-    /// coffee machines-
+    /// coffee machines.
     pub fn get_ingredients_consumed(
         containers_level: Vec<HashMap<String, u32>>,
         initial_quantity: u32,
@@ -51,7 +54,7 @@ pub mod presenter {
         ingredients_consumed
     }
 
-    /// Shows the current quantity of all the containers of all the coffee machines
+    /// Shows the current quantity of all the containers of all the coffee machines.
     pub fn present_level_of_containers(
         containers_level: Vec<HashMap<String, u32>>,
     ) -> Result<(), Error> {
@@ -73,7 +76,7 @@ pub mod presenter {
     }
 
     /// Shows the current quantity of ingredients consumed between all the containers of all the
-    /// coffee machines
+    /// coffee machines.
     pub fn present_ingredients_consumed(ingredients_consumed: HashMap<String, u32>) {
         println!("[INGREDIENTS CONSSUMED]");
 
@@ -83,8 +86,9 @@ pub mod presenter {
         }
     }
 
-    /// Shows stats of the level of containers of all the coffee machines, the total of orders processed
-    /// and the total of ingredients consumed between all the containers of all the coffee machines
+    /// Shows stats of the level of containers of all the coffee machines,
+    /// the total of orders processed and the total of ingredients consumed between
+    /// all the containers of all the coffee machines.
     pub fn present_stats(
         coffee_makers: Vec<CoffeeMaker>,
         current_num_orders: u32,
@@ -99,6 +103,7 @@ pub mod presenter {
         Ok(())
     }
 
+    /// Handles the presentation of stats periodically.
     fn present_statistics(
         coffee_makers: Vec<CoffeeMaker>,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
@@ -120,6 +125,7 @@ pub mod presenter {
         Ok(())
     }
 
+    /// Performs the presentation of statistics until there are no more orders to make.
     pub fn show_statistics(
         coffee_makers: Vec<CoffeeMaker>,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,

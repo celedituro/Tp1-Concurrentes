@@ -62,7 +62,7 @@ impl IHandler {
         Ok(replenish)
     }
 
-    /// Check if there is enough ingredient.
+    /// Check if there is enough ingredient and notifies it to the ingredient handler.
     pub fn check_for_ingredient(
         &mut self,
         ingredient: String,
@@ -84,7 +84,7 @@ impl IHandler {
         Ok(())
     }
 
-    /// Dispense the resource of the ingredient.
+    /// Decrease the quantity of the resource of the ingredient.
     fn get_ingredient(&mut self, ingredient: &String) -> Result<(), Error> {
         let resource = &self.values[ingredient].0;
         println!(
@@ -101,7 +101,7 @@ impl IHandler {
         Ok(())
     }
 
-    /// Replenish the ingredient when there is not enough quantity of it.
+    /// Increments the quantity of the ingredient.
     pub fn replenish_ingredient(&mut self, ingredient: &String) -> Result<(), Error> {
         println!(
             "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
@@ -116,6 +116,9 @@ impl IHandler {
         Ok(())
     }
 
+    /// Performs the increment and decrement of the quantities of the ingredient and its
+    /// resource.
+    /// If the ingredient is water, it only performs the increment of it.
     pub fn replenish(&mut self, ingredient: &String) -> Result<(), Error> {
         if ingredient != WATER {
             self.get_ingredient(ingredient)?;
@@ -125,7 +128,8 @@ impl IHandler {
         Ok(())
     }
 
-    pub fn handle_replenish(
+    /// Performs the replenishment of the ingredient received when its necessary.
+    pub fn do_replenish(
         &mut self,
         ingredient: &String,
         has_to_replenish: Arc<(Mutex<bool>, Condvar)>,

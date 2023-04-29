@@ -11,6 +11,7 @@ const VALUE_TO_REPLENISH: u32 = 50;
 const MIN_VALUE_TO_REPLENISH: u32 = 10;
 const INITIAL_QUANTITY: u32 = 100;
 
+/// Returns a list of CoffeMaker.
 fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {

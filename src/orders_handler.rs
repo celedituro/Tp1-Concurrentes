@@ -5,7 +5,8 @@ pub mod order_handler {
         coffee_maker::CoffeeMaker, dispensers::dispenser::make_order, errors::Error, orders::Order,
     };
 
-    // Gets an order from the list of orders if there are more orders to make, returns an error if not
+    /// Gets an order from the list of orders if there are more orders to make,
+    /// returns an error if not.
     fn get_order(
         orders: Arc<RwLock<Vec<Order>>>,
         has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
@@ -28,7 +29,8 @@ pub mod order_handler {
         Ok(order)
     }
 
-    // Gets an order and processes it if it can, returns an error if not
+    /// Gets an order and processes it if it can,
+    /// returns an error if not.
     pub fn process_order(
         orders: Arc<RwLock<Vec<Order>>>,
         coffee_maker: CoffeeMaker,

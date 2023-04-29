@@ -18,7 +18,7 @@ pub struct Containers {
 }
 
 impl Containers {
-    // Creates a hashmap of containers of ingredients
+    /// Creates a new [`Containers`].
     pub fn new(max_value: u32) -> Containers {
         let mut containers = HashMap::new();
         containers.insert(
@@ -52,7 +52,7 @@ impl Containers {
         Containers { all: containers }
     }
 
-    // Gets the ingredients of an order
+    // Calls to the container of the ingredient that receives to decrement its quantity.
     pub fn get_ingredient(
         self,
         ingredient: &String,
@@ -69,6 +69,7 @@ impl Containers {
         Ok(())
     }
 
+    // Calls to the container of the ingredient that receives to increment its quantity.
     pub fn replenish_ingredient(
         self,
         ingredient: &String,

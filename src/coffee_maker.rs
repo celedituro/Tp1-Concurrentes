@@ -34,6 +34,7 @@ impl CoffeeMaker {
         }
     }
 
+    /// Calls to the ingredient handler to perform the replenishing of ingredients.
     fn handle_replenish(
         mut self,
         orders: Arc<RwLock<Vec<Order>>>,
@@ -56,7 +57,7 @@ impl CoffeeMaker {
 
             match self
                 .handler
-                .handle_replenish(&COFFEE.to_string(), has_to_replenish_coffee.clone())
+                .do_replenish(&COFFEE.to_string(), has_to_replenish_coffee.clone())
             {
                 Ok(_) => println!(
                     "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: FINISHING",
@@ -86,7 +87,7 @@ impl CoffeeMaker {
         Ok(())
     }
 
-    // Makes the dispensers to start making orders
+    /// Makes its dispensers to start making orders.
     pub fn start(
         self,
         orders: &Arc<RwLock<Vec<Order>>>,

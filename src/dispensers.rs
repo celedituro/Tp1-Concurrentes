@@ -8,6 +8,9 @@ pub mod dispenser {
     const COCOA: &str = "cocoa";
     const FOAM: &str = "foam";
 
+    /// Gets all the ingredients of the order.
+    /// Also calls to the ingredient handler of its coffee machine to replenish
+    /// ingredients if its necessary.
     pub fn make_order(
         order: Order,
         mut coffee_maker: CoffeeMaker,

@@ -9,6 +9,7 @@ pub struct Order {
 }
 
 impl Order {
+    /// Creates a new [`Order`].
     pub fn new(coffee_value: u32, water_value: u32, cocoa_value: u32, foam_value: u32) -> Order {
         Order {
             coffee: coffee_value,
