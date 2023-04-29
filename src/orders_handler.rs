@@ -5,6 +5,15 @@ pub mod order_handler {
         coffee_maker::CoffeeMaker, dispensers::dispenser::make_order, errors::Error, orders::Order,
     };
 
+    /// Notifies to replenish an ingredient.
+    pub fn notify_to_replenish(has_to_replenish: Arc<(Mutex<bool>, Condvar)>) {
+        let (has_to_replenish_lock, condvar) = &*has_to_replenish;
+        if let Ok(mut has_to_replenish) = has_to_replenish_lock.lock() {
+            *has_to_replenish = true;
+        }
+        condvar.notify_all();
+    }
+
     /// Gets an order from the list of orders if there are more orders to make,
     /// returns an error if not.
     fn get_order(
@@ -16,17 +25,9 @@ pub mod order_handler {
             if !orders.is_empty() {
                 orders.remove(0)
             } else {
-                let (has_to_replenish_coffee_lock, condvar_coffee) = &*has_to_replenish_coffee;
-                if let Ok(mut has_to_replenish_coffee) = has_to_replenish_coffee_lock.lock() {
-                    *has_to_replenish_coffee = true;
-                }
-                condvar_coffee.notify_all();
+                notify_to_replenish(has_to_replenish_coffee);
+                notify_to_replenish(has_to_replenish_foam);
 
-                let (has_to_replenish_foam_lock, condvar_foam) = &*has_to_replenish_foam;
-                if let Ok(mut has_to_replenish_foam) = has_to_replenish_foam_lock.lock() {
-                    *has_to_replenish_foam = true;
-                }
-                condvar_foam.notify_all();
                 return Err(Error::NoMoreOrders);
             }
         } else {
@@ -66,7 +67,7 @@ pub mod order_handler {
                         has_to_replenish_foam.clone(),
                     ) {
                         Ok(_) => println!(
-                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ORDER COMPLETED",
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: FINISHING ORDER",
                             dispenser_id, coffee_maker.id
                         ),
                         Err(err) => match err {

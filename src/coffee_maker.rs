@@ -111,21 +111,14 @@ impl CoffeeMaker {
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING",
                     i, self.id
                 );
-                match process_order(
+                process_order(
                     orders,
                     coffee_machine,
                     i,
                     orders_processed,
                     has_to_replenish_coffee,
                     has_to_replenish_foam,
-                ) {
-                    Ok(_) => println!(
-                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: ALREADY MADE ORDER",
-                        i, self.id
-                    ),
-                    Err(err) => return Err(err),
-                }
-
+                )?;
                 Ok(())
             });
 
@@ -322,4 +315,33 @@ mod tests {
             .quantity;
         assert_eq!(foam, 60);
     }
+
+    // #[test]
+    // fn test06_has_to_replenish_coffee_but_does_not_has_enough_grain_coffee() {
+    //     let mut orders_list = Vec::new();
+    //     let order = Order::new(50, 10, 5, 5);
+    //     for _ in 0..6 {
+    //         orders_list.push(order.clone());
+    //     }
+    //     let orders = Arc::new(RwLock::new(orders_list));
+    //     let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
+
+    //     let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
+    //     coffee_maker
+    //         .clone()
+    //         .start(&orders, orders_processed)
+    //         .expect("Error when starting");
+
+    //     let grain_coffee_got = coffee_maker
+    //         .containers
+    //         .get_quantity_of(&"grain_coffee".to_string())
+    //         .expect("Error when locking coffee container");
+    //     let coffee_got = coffee_maker
+    //         .containers
+    //         .get_quantity_of(&"coffee".to_string())
+    //         .expect("Error when locking coffee container");
+
+    //     assert_eq!(grain_coffee_got, 0);
+    //     assert_eq!(coffee_got, 0);
+    // }
 }

@@ -32,21 +32,16 @@ fn main() -> Result<(), Error> {
     let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
     let coffee_makers = get_coffee_makers();
 
-    let mut machines: Vec<JoinHandle<()>> = Vec::new();
+    let mut machines: Vec<JoinHandle<Result<(), Error>>> = Vec::new();
     for coffee_maker in coffee_makers.clone() {
         let orders = orders.clone();
         let orders_processed = orders_processed.clone();
         let coffee_maker_clone = coffee_maker.clone();
-        let handle = thread::spawn(move || {
-            match coffee_maker_clone.clone().start(&orders, orders_processed) {
-                Ok(_) => println!("[COFFEE MAKER {:?}]: FINALIZING", coffee_maker.id),
-                Err(err) => {
-                    println!(
-                        "[COFFEE MAKER {:?}]: ABORTING FOR ERROR {:?}",
-                        coffee_maker.id, err
-                    )
-                }
-            }
+        let handle: JoinHandle<Result<(), Error>> = thread::spawn(move || {
+            coffee_maker_clone
+                .clone()
+                .start(&orders, orders_processed)?;
+            Ok(())
         });
         machines.push(handle);
     }
@@ -56,7 +51,7 @@ fn main() -> Result<(), Error> {
     for handle in machines {
         match handle.join() {
             Ok(_) => println!("[COFFEE MAKER]: FINISHING"),
-            Err(_) => println!("[COFFEE MAKER]: ERROR WHEN JOINING"),
+            Err(err) => println!("[COFFEE MAKER]: ERROR {:?} WHEN JOINING", err),
         }
     }
 
