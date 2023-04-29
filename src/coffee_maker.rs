@@ -9,7 +9,7 @@ const DISPENSERS: u32 = 5;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
 const WATER: &str = "water";
-// const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, WATER, FOAM];
+const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, FOAM, WATER];
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
@@ -36,52 +36,56 @@ impl CoffeeMaker {
 
     /// Calls to the ingredient handler to perform the replenishing of ingredients.
     fn handle_replenish(
-        mut self,
+        self,
         orders: Arc<RwLock<Vec<Order>>>,
-        has_to_replenish: Arc<(Mutex<bool>, Condvar)>,
-        ingredient: String,
+        has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        handler_is_awake: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<(), Error> {
         println!(
             "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: STARTING",
             self.id
         );
-        let handle = thread::spawn(move || loop {
-            match self
-                .handler
-                .do_replenish(&ingredient, has_to_replenish.clone())
-            {
+
+        let mut handlers: Vec<JoinHandle<Result<(), Error>>> = Vec::new();
+        for (i, ingredient) in INGREDIENTS_TO_REPLENISH.iter().enumerate() {
+            let mut coffee_maker = self.clone();
+            let has_to_replenish = has_to_replenish.clone();
+            let handler_is_awake = handler_is_awake.clone();
+            let orders = orders.clone();
+            let handle: JoinHandle<Result<(), Error>> = thread::spawn(move || loop {
+                match coffee_maker.handler.do_replenish(
+                    &ingredient.to_string(),
+                    has_to_replenish.clone(),
+                    handler_is_awake.clone(),
+                    i,
+                ) {
+                    Ok(_) => println!(
+                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: FINISHING",
+                        self.id
+                    ),
+                    Err(err) => return Err(err),
+                }
+
+                if let Ok(orders) = orders.read() {
+                    if orders.is_empty() {
+                        return Err(Error::NoMoreOrders);
+                    }
+                }
+            });
+            handlers.push(handle)
+        }
+
+        for handle in handlers {
+            match handle.join() {
                 Ok(_) => println!(
                     "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: FINISHING",
                     self.id
                 ),
-                Err(error) => {
-                    println!(
-                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: ERROR {:?}",
-                        self.id, error
-                    );
-                    break;
-                }
+                Err(err) => println!(
+                    "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: {:?}",
+                    self.id, err
+                ),
             }
-            if let Ok(orders) = orders.read() {
-                if orders.is_empty() {
-                    println!(
-                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: NO MORE ORDERS",
-                        self.id
-                    );
-                    break;
-                }
-            }
-        });
-
-        match handle.join() {
-            Ok(_) => println!(
-                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: FINISHING",
-                self.id
-            ),
-            Err(_) => println!(
-                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: ERROR WHEN JOINING",
-                self.id
-            ),
         }
 
         Ok(())
@@ -93,57 +97,52 @@ impl CoffeeMaker {
         orders: &Arc<RwLock<Vec<Order>>>,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
     ) -> Result<(), Error> {
-        let has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)> =
-            Arc::new((Mutex::new(false), Condvar::new()));
-        let has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)> =
-            Arc::new((Mutex::new(false), Condvar::new()));
-        let has_to_replenish_water: Arc<(Mutex<bool>, Condvar)> =
-            Arc::new((Mutex::new(false), Condvar::new()));
+        let has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)> =
+            Arc::new((Mutex::new(vec![false, false, false]), Condvar::new()));
+        let handler_is_awake: Arc<(Mutex<Vec<bool>>, Condvar)> =
+            Arc::new((Mutex::new(vec![false, false, false]), Condvar::new()));
 
         let mut dispensers: Vec<JoinHandle<Result<(), Error>>> = Vec::new();
         for i in 0..DISPENSERS {
             let orders = Arc::clone(orders);
             let orders_processed = orders_processed.clone();
-            let has_to_replenish_coffee = has_to_replenish_coffee.clone();
-            let has_to_replenish_foam = has_to_replenish_foam.clone();
-            let has_to_replenish_water = has_to_replenish_water.clone();
             let coffee_machine = self.clone();
 
+            let has_to_replenish = has_to_replenish.clone();
+            let handler_is_awake = handler_is_awake.clone();
+
             let handle = thread::spawn(move || {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING",
-                    i, self.id
-                );
-                process_order(
-                    orders,
-                    coffee_machine,
-                    i,
-                    orders_processed,
-                    has_to_replenish_coffee,
-                    has_to_replenish_foam,
-                    has_to_replenish_water,
-                )?;
+                let (handle_is_awake_lock, condvar) = &*handler_is_awake;
+                if let Ok(handler_is_awake) = handle_is_awake_lock.lock() {
+                    println!(
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: WAITING SINCE HANDLER IS AWAKE IS {:?}",
+                        i, self.id, handler_is_awake
+                    );
+                    if let Ok(value) =
+                        condvar.wait_while(handler_is_awake, |v| v.iter().any(|&b| !b))
+                    {
+                        println!(
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING SINCE {:?}",
+                            i, self.id, value
+                        );
+                        process_order(
+                            orders,
+                            coffee_machine,
+                            i,
+                            orders_processed,
+                            has_to_replenish,
+                        )?;
+                    }
+                }
+
                 Ok(())
             });
 
             dispensers.push(handle);
         }
 
-        self.clone().handle_replenish(
-            Arc::clone(orders),
-            has_to_replenish_coffee,
-            COFFEE.to_string(),
-        )?;
-        self.clone().handle_replenish(
-            Arc::clone(orders),
-            has_to_replenish_foam,
-            FOAM.to_string(),
-        )?;
-        self.clone().handle_replenish(
-            Arc::clone(orders),
-            has_to_replenish_water,
-            WATER.to_string(),
-        )?;
+        self.clone()
+            .handle_replenish(Arc::clone(orders), has_to_replenish, handler_is_awake)?;
 
         for handle in dispensers {
             match handle.join() {
@@ -173,23 +172,11 @@ mod tests {
         let orders_list = Vec::new();
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
-        let has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)> =
-            Arc::new((Mutex::new(false), Condvar::new()));
-        let has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)> =
-            Arc::new((Mutex::new(false), Condvar::new()));
-        let has_to_replenish_water: Arc<(Mutex<bool>, Condvar)> =
-            Arc::new((Mutex::new(false), Condvar::new()));
+        let has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)> =
+            Arc::new((Mutex::new(vec![false, false, false]), Condvar::new()));
 
-        let result = process_order(
-            orders,
-            coffee_maker,
-            0,
-            orders_processed,
-            has_to_replenish_coffee,
-            has_to_replenish_foam,
-            has_to_replenish_water,
-        )
-        .expect_err("There are no more orders");
+        let result = process_order(orders, coffee_maker, 0, orders_processed, has_to_replenish)
+            .expect_err("There are no more orders");
         let err_expected = Error::NoMoreOrders;
 
         assert_eq!(result, err_expected);
@@ -275,7 +262,7 @@ mod tests {
     fn test04_get_more_coffee_and_decrease_quantity_of_grain_coffee_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
-        for _ in 0..9 {
+        for _ in 0..10 {
             orders_list.push(order.clone());
         }
         let orders = Arc::new(RwLock::new(orders_list));
@@ -297,14 +284,14 @@ mod tests {
             .expect("Error when locking coffee container");
 
         assert_eq!(grain_coffee_got, 50);
-        assert_eq!(coffee_got, 60);
+        assert_eq!(coffee_got, 50);
     }
 
     #[test]
     fn test05_get_more_foam_and_decrease_quantity_of_milk_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(5, 10, 5, 10);
-        for _ in 0..9 {
+        for _ in 0..10 {
             orders_list.push(order.clone());
         }
         let orders = Arc::new(RwLock::new(orders_list));
@@ -316,29 +303,53 @@ mod tests {
             .start(&orders, orders_processed)
             .expect("Error when starting");
 
-        let milk = coffee_maker.clone().containers.all["milk"]
+        let milk_got = coffee_maker.clone().containers.all["milk"]
             .read()
             .expect("Cant have read lock of the milk container")
             .quantity;
-        assert_eq!(milk, 50);
-        let foam: u32 = coffee_maker.clone().containers.all["foam"]
+        let foam_got: u32 = coffee_maker.clone().containers.all["foam"]
             .read()
             .expect("Cant have read lock of the foam container")
             .quantity;
-        assert_eq!(foam, 60);
+
+        assert_eq!(milk_got, 50);
+        assert_eq!(foam_got, 50);
     }
 
     #[test]
     fn test06_get_more_water_and_increase_the_quantity_of_water_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(5, 10, 5, 5);
-        for _ in 0..9 {
+        for _ in 0..10 {
             orders_list.push(order.clone());
         }
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
+        coffee_maker
+            .clone()
+            .start(&orders, orders_processed)
+            .expect("Error when starting");
+
+        let water: u32 = coffee_maker.clone().containers.all["water"]
+            .read()
+            .expect("Cant have read lock of the water container")
+            .quantity;
+        assert_eq!(water, 50);
+    }
+
+    #[test]
+    fn test07_replenish_value_of_water_is_greater_than_initial_quantity_and_can_replenish_water() {
+        let mut orders_list = Vec::new();
+        let order = Order::new(5, 10, 5, 5);
+        for _ in 0..5 {
+            orders_list.push(order.clone());
+        }
+        let orders = Arc::new(RwLock::new(orders_list));
+        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
+
+        let coffee_maker = CoffeeMaker::new(0, 50, 60, 20);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -350,56 +361,4 @@ mod tests {
             .quantity;
         assert_eq!(water, 60);
     }
-
-    #[test]
-    fn test07_replenish_value_of_water_is_greater_than_initial_quantity_and_can_replenish_water() {
-        let mut orders_list = Vec::new();
-        let order = Order::new(5, 10, 5, 5);
-        for _ in 0..9 {
-            orders_list.push(order.clone());
-        }
-        let orders = Arc::new(RwLock::new(orders_list));
-        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
-
-        let coffee_maker = CoffeeMaker::new(0, 100, 150, 20);
-        coffee_maker
-            .clone()
-            .start(&orders, orders_processed)
-            .expect("Error when starting");
-
-        let water: u32 = coffee_maker.clone().containers.all["water"]
-            .read()
-            .expect("Cant have read lock of the water container")
-            .quantity;
-        assert_eq!(water, 160);
-    }
-
-    // #[test]
-    // fn test07_has_to_replenish_coffee_but_does_not_has_enough_grain_coffee() {
-    //     let mut orders_list = Vec::new();
-    //     let order = Order::new(50, 10, 5, 5);
-    //     for _ in 0..6 {
-    //         orders_list.push(order.clone());
-    //     }
-    //     let orders = Arc::new(RwLock::new(orders_list));
-    //     let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
-
-    //     let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
-    //     coffee_maker
-    //         .clone()
-    //         .start(&orders, orders_processed)
-    //         .expect("Error when starting");
-
-    //     let grain_coffee_got = coffee_maker
-    //         .containers
-    //         .get_quantity_of(&"grain_coffee".to_string())
-    //         .expect("Error when locking coffee container");
-    //     let coffee_got = coffee_maker
-    //         .containers
-    //         .get_quantity_of(&"coffee".to_string())
-    //         .expect("Error when locking coffee container");
-
-    //     assert_eq!(grain_coffee_got, 0);
-    //     assert_eq!(coffee_got, 0);
-    // }
 }

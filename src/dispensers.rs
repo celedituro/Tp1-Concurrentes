@@ -3,7 +3,7 @@ pub mod dispenser {
 
     use crate::{
         coffee_maker::CoffeeMaker, errors::Error, orders::Order,
-        orders_handler::order_handler::notify_to_replenish,
+        orders_handler::order_handler::notify_to_replenish_ingredient,
     };
 
     const COFFEE: &str = "coffee";
@@ -40,9 +40,7 @@ pub mod dispenser {
         mut coffee_maker: CoffeeMaker,
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
-        has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
-        has_to_replenish_foam: Arc<(Mutex<bool>, Condvar)>,
-        has_to_replenish_water: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<(), Error> {
         match coffee_maker.containers.clone().get_ingredient(
             &COFFEE.to_owned(),
@@ -55,13 +53,17 @@ pub mod dispenser {
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT COFFEE",
                     dispenser_id, coffee_maker.id
                 );
-                coffee_maker
-                    .handler
-                    .check_for_ingredient(COFFEE.to_owned(), has_to_replenish_coffee)?;
+                coffee_maker.handler.check_for_ingredient(
+                    COFFEE.to_owned(),
+                    has_to_replenish.clone(),
+                    0,
+                )?;
             }
 
             Err(err) => match err {
-                Error::NotEnoughIngredient => notify_to_replenish(has_to_replenish_coffee),
+                Error::NotEnoughIngredient => {
+                    notify_to_replenish_ingredient(has_to_replenish.clone(), 0)
+                }
                 _ => return Err(err),
             },
         };
@@ -77,13 +79,17 @@ pub mod dispenser {
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT WATER",
                     dispenser_id, coffee_maker.id
                 );
-                coffee_maker
-                    .handler
-                    .check_for_ingredient(WATER.to_owned(), has_to_replenish_water)?;
+                coffee_maker.handler.check_for_ingredient(
+                    WATER.to_owned(),
+                    has_to_replenish.clone(),
+                    2,
+                )?;
             }
 
             Err(err) => match err {
-                Error::NotEnoughIngredient => notify_to_replenish(has_to_replenish_water),
+                Error::NotEnoughIngredient => {
+                    notify_to_replenish_ingredient(has_to_replenish.clone(), 2)
+                }
                 _ => return Err(err),
             },
         };
@@ -101,10 +107,10 @@ pub mod dispenser {
                 );
                 coffee_maker
                     .handler
-                    .check_for_ingredient(FOAM.to_owned(), has_to_replenish_foam)?;
+                    .check_for_ingredient(FOAM.to_owned(), has_to_replenish, 1)?;
             }
             Err(err) => match err {
-                Error::NotEnoughIngredient => notify_to_replenish(has_to_replenish_foam),
+                Error::NotEnoughIngredient => notify_to_replenish_ingredient(has_to_replenish, 1),
                 _ => return Err(err),
             },
         }

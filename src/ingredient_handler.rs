@@ -3,6 +3,7 @@ use std::sync::{Arc, Condvar, Mutex};
 
 use crate::containers::Containers;
 use crate::errors::Error;
+use crate::orders_handler::order_handler::notify_to_replenish_ingredient;
 
 const COFFEE: &str = "coffee";
 const WATER: &str = "water";
@@ -66,7 +67,8 @@ impl IHandler {
     pub fn check_for_ingredient(
         &mut self,
         ingredient: String,
-        has_to_replenish_coffee: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        idx: u32,
     ) -> Result<(), Error> {
         println!(
             "[COFFEE MAKER {:?}]: CHECKING FOR {:?}",
@@ -74,11 +76,7 @@ impl IHandler {
         );
 
         if self.clone().has_to_replenish(&ingredient)? {
-            let (has_to_replenish_coffee_lock, condvar) = &*has_to_replenish_coffee;
-            if let Ok(mut has_to_replenish_coffee) = has_to_replenish_coffee_lock.lock() {
-                *has_to_replenish_coffee = true;
-            }
-            condvar.notify_all();
+            notify_to_replenish_ingredient(has_to_replenish, idx)
         }
 
         Ok(())
@@ -122,10 +120,12 @@ impl IHandler {
     /// resource.
     /// If the ingredient is water, it only performs the increment of it.
     pub fn replenish(&mut self, ingredient: &String) -> Result<(), Error> {
-        if ingredient != WATER {
-            self.get_ingredient(ingredient)?;
+        if self.clone().has_to_replenish(ingredient)? {
+            if ingredient != WATER {
+                self.get_ingredient(ingredient)?;
+            }
+            self.replenish_ingredient(ingredient)?;
         }
-        self.replenish_ingredient(ingredient)?;
 
         Ok(())
     }
@@ -134,22 +134,29 @@ impl IHandler {
     pub fn do_replenish(
         &mut self,
         ingredient: &String,
-        has_to_replenish: Arc<(Mutex<bool>, Condvar)>,
+        has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        handler_is_awake: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        idx: usize,
     ) -> Result<(), Error> {
+        let (handler_is_awake_lock, condvar) = &*handler_is_awake;
+        if let Ok(mut handler_is_awake) = handler_is_awake_lock.lock() {
+            handler_is_awake[idx] = true;
+        }
+        condvar.notify_all();
+
         let (has_to_replenish_lock, condvar) = &*has_to_replenish;
         if let Ok(has_to_replenish) = has_to_replenish_lock.lock() {
             println!(
                 "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: WAITING SINCE HAS TO REPLENISH {:?} IS {:?}",
                 self.coffee_maker_id, ingredient, has_to_replenish
             );
-            if let Ok(mut has_to_replenish) = condvar.wait_while(has_to_replenish, |value| !*value)
-            {
+            if let Ok(mut has_to_replenish) = condvar.wait_while(has_to_replenish, |v| !v[idx]) {
                 println!(
                     "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: START REPLENISHING {:?}",
                     self.coffee_maker_id, ingredient
                 );
+                has_to_replenish[idx] = false;
                 self.replenish(ingredient)?;
-                *has_to_replenish = false;
             }
         }
         condvar.notify_all();
