@@ -57,9 +57,9 @@ pub mod dispenser {
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<(), Error> {
-        let hash_order = convert_to_hash(order);
-
+        let hash_order: HashMap<String, u32> = convert_to_hash(order);
         for ingredient in INGREDIENTS {
+            let has_to_replenish = has_to_replenish.clone();
             match coffee_maker.containers.clone().get_ingredient(
                 &ingredient.to_owned(),
                 hash_order[ingredient],
@@ -71,12 +71,6 @@ pub mod dispenser {
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT {:?}",
                         dispenser_id, coffee_maker.id, ingredient
                     );
-                    if ingredient != COCOA {
-                        coffee_maker.clone().handler.check_for_ingredient(
-                            ingredient.to_owned(),
-                            has_to_replenish.clone(),
-                        )?;
-                    }
                 }
                 Err(err) => match err {
                     Error::NotEnoughIngredient => {
@@ -85,7 +79,24 @@ pub mod dispenser {
                                 .clone()
                                 .handler
                                 .get_index(ingredient.to_owned());
+
                             notify_to_replenish_ingredient(has_to_replenish.clone(), idx);
+
+                            let (has_to_replenish_lock, _condvar) = &*has_to_replenish;
+                            if let Ok(has_to_replenish) = has_to_replenish_lock.lock() {
+                                println!(
+                                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: WAITING TO {:?} TO BE REPLENISH SINCE {:?}",
+                                        dispenser_id, coffee_maker.id, ingredient, has_to_replenish
+                                );
+                                if has_to_replenish[idx as usize] {
+                                    coffee_maker.containers.clone().get_ingredient(
+                                        &ingredient.to_owned(),
+                                        hash_order[ingredient],
+                                        Some(dispenser_id),
+                                        coffee_maker.id,
+                                    )?
+                                }
+                            }
                         }
                     }
                     _ => return Err(err),

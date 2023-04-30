@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn test01_get_one_coffee_maker_with_no_orders_processed() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let orders_list = Vec::new();
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn test02_get_one_coffee_maker_with_one_order_and_the_level_of_its_container_is_updated() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let mut orders_list = Vec::new();
         orders_list.push(Order::new(10, 10, 5, 5));
         let orders = Arc::new(RwLock::new(orders_list));
@@ -177,7 +177,7 @@ mod tests {
     #[test]
     fn test03_get_one_coffee_maker_with_five_orders_and_the_level_of_its_container_is_updated() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         for _ in 0..5 {
@@ -207,7 +207,7 @@ mod tests {
     #[test]
     fn test04_get_one_coffee_maker_with_ten_orders_and_the_level_of_its_container_is_updated() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         for _ in 0..10 {
@@ -237,7 +237,7 @@ mod tests {
     #[test]
     fn test05_get_one_coffee_maker_with_no_orders_and_ingredients_consumed_are_zero() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 20));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let orders_list = Vec::new();
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
@@ -263,7 +263,7 @@ mod tests {
     #[test]
     fn test06_get_one_coffee_maker_with_one_order_processed_and_ingredients_consumed_are_updated() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let mut orders_list = Vec::new();
         orders_list.push(Order::new(10, 10, 5, 5));
         let orders = Arc::new(RwLock::new(orders_list));
@@ -287,7 +287,7 @@ mod tests {
     #[test]
     fn test07_get_one_coffee_maker_with_five_orders_and_ingredients_consumed_are_updated() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         for _ in 0..5 {
@@ -314,8 +314,8 @@ mod tests {
     #[test]
     fn test08_get_two_coffee_makers_with_ten_orders_and_ingredients_consumed_are_updated() {
         let mut coffee_makers = Vec::new();
-        coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
-        coffee_makers.push(CoffeeMaker::new(1, 100, 50, 10));
+        coffee_makers.push(CoffeeMaker::new(0, 100, 50));
+        coffee_makers.push(CoffeeMaker::new(1, 100, 50));
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
         for _ in 0..10 {

@@ -6,21 +6,15 @@ use tp1::errors::Error;
 use tp1::input_controller::InputController;
 use tp1::stats_presenter::presenter::show_statistics;
 
-const COFFEE_MAKERS: u32 = 1;
+const COFFEE_MAKERS: u32 = 2;
 const VALUE_TO_REPLENISH: u32 = 50;
-const MIN_VALUE_TO_REPLENISH: u32 = 10;
 const INITIAL_QUANTITY: u32 = 100;
 
 /// Returns a list of CoffeeMaker.
 pub fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
-        coffee_makers.push(CoffeeMaker::new(
-            j,
-            INITIAL_QUANTITY,
-            VALUE_TO_REPLENISH,
-            MIN_VALUE_TO_REPLENISH,
-        ));
+        coffee_makers.push(CoffeeMaker::new(j, INITIAL_QUANTITY, VALUE_TO_REPLENISH));
     }
 
     coffee_makers
@@ -28,7 +22,10 @@ pub fn get_coffee_makers() -> Vec<CoffeeMaker> {
 
 fn main() -> Result<(), Error> {
     let input_controller = InputController::new(std::env::args().nth(1))?;
-    let orders = Arc::new(RwLock::new(input_controller.get_orders()?));
+    let orders_list = input_controller.get_orders()?;
+    println!("TOTAL ORDERS TO PROCESS: {:?}", orders_list.len());
+
+    let orders = Arc::new(RwLock::new(orders_list));
     let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
     let coffee_makers = get_coffee_makers();
 
@@ -78,7 +75,7 @@ mod tests {
 
         let mut coffee_makers = Vec::new();
         for j in 0..2 {
-            coffee_makers.push(CoffeeMaker::new(j, 100, 50, 20));
+            coffee_makers.push(CoffeeMaker::new(j, 100, 50));
         }
         let orders = Arc::new(RwLock::new(orders_list));
 

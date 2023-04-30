@@ -5,7 +5,7 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: u32 = 2;
+const DISPENSERS: u32 = 3;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
 const HOT_WATER: &str = "hot_water";
@@ -20,17 +20,12 @@ pub struct CoffeeMaker {
 
 impl CoffeeMaker {
     /// Creates a new [`CoffeeMaker`].
-    pub fn new(
-        id_value: u32,
-        initial_quantity: u32,
-        replenish_value: u32,
-        min_value_to_replenish: u32,
-    ) -> CoffeeMaker {
+    pub fn new(id_value: u32, initial_quantity: u32, replenish_value: u32) -> CoffeeMaker {
         let c = Containers::new(initial_quantity);
         CoffeeMaker {
             id: id_value,
             containers: c.clone(),
-            handler: IHandler::new(c, id_value, replenish_value, min_value_to_replenish),
+            handler: IHandler::new(c, id_value, replenish_value),
         }
     }
 
@@ -59,11 +54,19 @@ impl CoffeeMaker {
                     handler_is_awake.clone(),
                     i,
                 ) {
-                    Ok(_) => println!(
-                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: FINISHING",
-                        self.id
-                    ),
-                    Err(err) => return Err(err),
+                    Ok(_) => {
+                        println!(
+                            "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: FINISHING",
+                            self.id
+                        );
+                    }
+                    Err(err) => {
+                        println!(
+                            "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: {:?}",
+                            self.id, err
+                        );
+                        return Err(err);
+                    }
                 }
 
                 if let Ok(orders) = orders.read() {
@@ -169,7 +172,7 @@ mod tests {
 
     #[test]
     fn test01_get_an_order_when_there_are_no_orders() {
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50);
         let orders_list = Vec::new();
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
@@ -191,7 +194,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -230,7 +233,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 20);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -269,7 +272,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -298,7 +301,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -327,7 +330,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 100, 50, 10);
+        let coffee_maker = CoffeeMaker::new(0, 100, 50);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)
@@ -351,7 +354,7 @@ mod tests {
         let orders = Arc::new(RwLock::new(orders_list));
         let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
 
-        let coffee_maker = CoffeeMaker::new(0, 50, 60, 20);
+        let coffee_maker = CoffeeMaker::new(0, 50, 60);
         coffee_maker
             .clone()
             .start(&orders, orders_processed)

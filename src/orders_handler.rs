@@ -10,12 +10,12 @@ pub mod order_handler {
     const IDX_FOAM: u32 = 2;
 
     /// Notifies to replenish an ingredient.
-    pub fn notify_to_replenish(has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>) {
+    pub fn notify_to_replenish(has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>, value: bool) {
         let (has_to_replenish_lock, condvar) = &*has_to_replenish;
         if let Ok(mut has_to_replenish) = has_to_replenish_lock.lock() {
-            has_to_replenish[IDX_COFFEE as usize] = true;
-            has_to_replenish[IDX_FOAM as usize] = true;
-            has_to_replenish[IDX_WATER as usize] = true;
+            has_to_replenish[IDX_COFFEE as usize] = value;
+            has_to_replenish[IDX_FOAM as usize] = value;
+            has_to_replenish[IDX_WATER as usize] = value;
         }
         condvar.notify_all();
     }
@@ -27,7 +27,9 @@ pub mod order_handler {
     ) {
         let (has_to_replenish_lock, condvar) = &*has_to_replenish;
         if let Ok(mut has_to_replenish) = has_to_replenish_lock.lock() {
-            has_to_replenish[idx as usize] = true;
+            if !has_to_replenish[idx as usize] {
+                has_to_replenish[idx as usize] = true;
+            }
         }
         condvar.notify_all();
     }
@@ -42,8 +44,7 @@ pub mod order_handler {
             if !orders.is_empty() {
                 orders.remove(0)
             } else {
-                notify_to_replenish(has_to_replenish);
-
+                notify_to_replenish(has_to_replenish, true);
                 return Err(Error::NoMoreOrders);
             }
         } else {

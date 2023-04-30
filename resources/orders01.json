@@ -1,26 +1,50 @@
 [
     {
-        "coffee": 20,
-        "water": 20,
-        "cocoa": 5,
-        "foam": 5
+        "coffee": 10,
+        "water": 10,
+        "cocoa": 10,
+        "foam": 10
     },
     {
-        "coffee": 20,
+        "coffee": 10,
         "water": 10,
-        "cocoa": 5,
-        "foam": 5
+        "cocoa": 10,
+        "foam": 10
     },
     {
-        "coffee": 20,
+        "coffee": 10,
         "water": 10,
-        "cocoa": 5,
-        "foam": 5
+        "cocoa": 10,
+        "foam": 10
     },
     {
-        "coffee": 20,
+        "coffee": 10,
         "water": 10,
-        "cocoa": 5,
-        "foam": 5
+        "cocoa": 10,
+        "foam": 10
+    },
+    {
+        "coffee": 10,
+        "water": 10,
+        "cocoa": 10,
+        "foam": 10
+    },
+    {
+        "coffee": 10,
+        "water": 10,
+        "cocoa": 10,
+        "foam": 10
+    },
+    {
+        "coffee": 10,
+        "water": 10,
+        "cocoa": 10,
+        "foam": 10
+    },
+    {
+        "coffee": 10,
+        "water": 10,
+        "cocoa": 10,
+        "foam": 10
     }
 ]
