@@ -11,6 +11,10 @@ pub mod dispenser {
     const COCOA: &str = "cocoa";
     const FOAM: &str = "foam";
 
+    const IDX_COFFEE: u32 = 0;
+    const IDX_WATER: u32 = 1;
+    const IDX_FOAM: u32 = 2;
+
     /// Increments the total num of orders processed and notifies it.
     pub fn notify_one_order_has_been_processed(
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
@@ -56,13 +60,13 @@ pub mod dispenser {
                 coffee_maker.handler.check_for_ingredient(
                     COFFEE.to_owned(),
                     has_to_replenish.clone(),
-                    0,
+                    IDX_COFFEE,
                 )?;
             }
 
             Err(err) => match err {
                 Error::NotEnoughIngredient => {
-                    notify_to_replenish_ingredient(has_to_replenish.clone(), 0)
+                    notify_to_replenish_ingredient(has_to_replenish.clone(), IDX_COFFEE)
                 }
                 _ => return Err(err),
             },
@@ -82,13 +86,13 @@ pub mod dispenser {
                 coffee_maker.handler.check_for_ingredient(
                     WATER.to_owned(),
                     has_to_replenish.clone(),
-                    2,
+                    IDX_WATER,
                 )?;
             }
 
             Err(err) => match err {
                 Error::NotEnoughIngredient => {
-                    notify_to_replenish_ingredient(has_to_replenish.clone(), 2)
+                    notify_to_replenish_ingredient(has_to_replenish.clone(), IDX_WATER)
                 }
                 _ => return Err(err),
             },
@@ -105,12 +109,16 @@ pub mod dispenser {
                     "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT FOAM",
                     dispenser_id, coffee_maker.id
                 );
-                coffee_maker
-                    .handler
-                    .check_for_ingredient(FOAM.to_owned(), has_to_replenish, 1)?;
+                coffee_maker.handler.check_for_ingredient(
+                    FOAM.to_owned(),
+                    has_to_replenish,
+                    IDX_FOAM,
+                )?;
             }
             Err(err) => match err {
-                Error::NotEnoughIngredient => notify_to_replenish_ingredient(has_to_replenish, 1),
+                Error::NotEnoughIngredient => {
+                    notify_to_replenish_ingredient(has_to_replenish, IDX_FOAM)
+                }
                 _ => return Err(err),
             },
         }

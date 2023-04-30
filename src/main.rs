@@ -12,7 +12,7 @@ const MIN_VALUE_TO_REPLENISH: u32 = 10;
 const INITIAL_QUANTITY: u32 = 100;
 
 /// Returns a list of CoffeeMaker.
-fn get_coffee_makers() -> Vec<CoffeeMaker> {
+pub fn get_coffee_makers() -> Vec<CoffeeMaker> {
     let mut coffee_makers = Vec::new();
     for j in 0..COFFEE_MAKERS {
         coffee_makers.push(CoffeeMaker::new(
@@ -27,8 +27,8 @@ fn get_coffee_makers() -> Vec<CoffeeMaker> {
 }
 
 fn main() -> Result<(), Error> {
-    let icontroller = InputController::new(std::env::args().nth(1))?;
-    let orders = Arc::new(RwLock::new(icontroller.get_orders()?));
+    let input_controller = InputController::new(std::env::args().nth(1))?;
+    let orders = Arc::new(RwLock::new(input_controller.get_orders()?));
     let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
     let coffee_makers = get_coffee_makers();
 

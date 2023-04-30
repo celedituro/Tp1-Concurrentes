@@ -1,20 +1,32 @@
 [
     {
         "coffee": 20,
-        "water": 7,
-        "cocoa": 4,
-        "foam": 4
+        "water": 10,
+        "cocoa": 5,
+        "foam": 5
     },
     {
         "coffee": 20,
-        "water": 6,
-        "cocoa": 3,
-        "foam": 3
+        "water": 10,
+        "cocoa": 5,
+        "foam": 5
     },
     {
         "coffee": 20,
-        "water": 7,
-        "cocoa": 4,
-        "foam": 4
+        "water": 10,
+        "cocoa": 5,
+        "foam": 5
+    },
+    {
+        "coffee": 20,
+        "water": 10,
+        "cocoa": 5,
+        "foam": 5
+    },
+    {
+        "coffee": 20,
+        "water": 10,
+        "cocoa": 5,
+        "foam": 5
     }
 ]
