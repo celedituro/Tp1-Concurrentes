@@ -6,7 +6,7 @@ use tp1::errors::Error;
 use tp1::input_controller::InputController;
 use tp1::stats_presenter::presenter::show_statistics;
 
-const COFFEE_MAKERS: u32 = 2;
+const COFFEE_MAKERS: u32 = 3;
 const VALUE_TO_REPLENISH: u32 = 50;
 const MIN_VALUE_TO_REPLENISH: u32 = 10;
 const INITIAL_QUANTITY: u32 = 100;
@@ -115,8 +115,8 @@ mod tests {
             .expect("Error when locking foam container");
         let water_0 = coffee_maker_0
             .containers
-            .get_quantity_of(&"water".to_string())
-            .expect("Error when locking water container");
+            .get_quantity_of(&"hot_water".to_string())
+            .expect("Error when locking hot water container");
         let cocoa_0 = coffee_maker_0
             .containers
             .get_quantity_of(&"cocoa".to_string())
@@ -132,8 +132,8 @@ mod tests {
             .expect("Error when locking foam container");
         let water_1 = coffee_maker_1
             .containers
-            .get_quantity_of(&"water".to_string())
-            .expect("Error when locking water container");
+            .get_quantity_of(&"hot_water".to_string())
+            .expect("Error when locking hot water container");
         let cocoa_1 = coffee_maker_1
             .containers
             .get_quantity_of(&"cocoa".to_string())

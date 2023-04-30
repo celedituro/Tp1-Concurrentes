@@ -1,5 +1,5 @@
 pub mod dispenser {
-    use std::sync::{Arc, Condvar, Mutex};
+    use std::{sync::{Arc, Condvar, Mutex}, collections::HashMap};
 
     use crate::{
         coffee_maker::CoffeeMaker, errors::Error, orders::Order,
@@ -7,16 +7,14 @@ pub mod dispenser {
     };
 
     const COFFEE: &str = "coffee";
-    const WATER: &str = "water";
+    const HOT_WATER: &str = "hot_water";
     const COCOA: &str = "cocoa";
     const FOAM: &str = "foam";
 
-    const IDX_COFFEE: u32 = 0;
-    const IDX_WATER: u32 = 1;
-    const IDX_FOAM: u32 = 2;
+    const INGREDIENTS: [&str; 4] = [COFFEE, HOT_WATER, COCOA, FOAM];
 
     /// Increments the total num of orders processed and notifies it.
-    pub fn notify_one_order_has_been_processed(
+    pub fn notify_one_order_processed(
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         dispenser_id: u32,
         coffee_maker_id: u32,
@@ -36,101 +34,60 @@ pub mod dispenser {
         Ok(())
     }
 
+    fn convert_to_hash(order: Order) -> HashMap<String, u32> {
+        let mut hash_order: HashMap<String, u32>= HashMap::new();
+        hash_order.insert(COFFEE.to_owned(), order.coffee);
+        hash_order.insert(FOAM.to_owned(), order.foam);
+        hash_order.insert(HOT_WATER.to_owned(), order.water);
+        hash_order.insert(COCOA.to_owned(), order.cocoa);
+
+        hash_order
+    }
+
     /// Gets all the ingredients of the order.
     /// Also calls to the ingredient handler of its coffee machine to replenish
     /// ingredients if its necessary.
     pub fn make_order(
         order: Order,
-        mut coffee_maker: CoffeeMaker,
+        coffee_maker: CoffeeMaker,
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<(), Error> {
-        match coffee_maker.containers.clone().get_ingredient(
-            &COFFEE.to_owned(),
-            order.coffee,
-            Some(dispenser_id),
-            coffee_maker.id,
-        ) {
-            Ok(_) => {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT COFFEE",
-                    dispenser_id, coffee_maker.id
-                );
-                coffee_maker.handler.check_for_ingredient(
-                    COFFEE.to_owned(),
-                    has_to_replenish.clone(),
-                    IDX_COFFEE,
-                )?;
-            }
+        let hash_order = convert_to_hash(order);
 
-            Err(err) => match err {
-                Error::NotEnoughIngredient => {
-                    notify_to_replenish_ingredient(has_to_replenish.clone(), IDX_COFFEE)
+        for ingredient in INGREDIENTS {
+            match coffee_maker.containers.clone().get_ingredient(
+                &ingredient.to_owned(),
+                hash_order[ingredient],
+                Some(dispenser_id),
+                coffee_maker.id,
+            ) {
+                Ok(_) => {
+                    println!(
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT COFFEE",
+                        dispenser_id, coffee_maker.id
+                    );
+                    if ingredient != COCOA {
+                        coffee_maker.clone().handler.check_for_ingredient(
+                            ingredient.to_owned(),
+                            has_to_replenish.clone(),
+                        )?;
+                    }
                 }
-                _ => return Err(err),
-            },
-        };
-
-        match coffee_maker.containers.clone().get_ingredient(
-            &WATER.to_owned(),
-            order.water,
-            Some(dispenser_id),
-            coffee_maker.id,
-        ) {
-            Ok(_) => {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT WATER",
-                    dispenser_id, coffee_maker.id
-                );
-                coffee_maker.handler.check_for_ingredient(
-                    WATER.to_owned(),
-                    has_to_replenish.clone(),
-                    IDX_WATER,
-                )?;
-            }
-
-            Err(err) => match err {
-                Error::NotEnoughIngredient => {
-                    notify_to_replenish_ingredient(has_to_replenish.clone(), IDX_WATER)
-                }
-                _ => return Err(err),
-            },
-        };
-
-        match coffee_maker.containers.clone().get_ingredient(
-            &FOAM.to_owned(),
-            order.foam,
-            Some(dispenser_id),
-            coffee_maker.id,
-        ) {
-            Ok(_) => {
-                println!(
-                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT FOAM",
-                    dispenser_id, coffee_maker.id
-                );
-                coffee_maker.handler.check_for_ingredient(
-                    FOAM.to_owned(),
-                    has_to_replenish,
-                    IDX_FOAM,
-                )?;
-            }
-            Err(err) => match err {
-                Error::NotEnoughIngredient => {
-                    notify_to_replenish_ingredient(has_to_replenish, IDX_FOAM)
-                }
-                _ => return Err(err),
-            },
+                Err(err) => match err {
+                    Error::NotEnoughIngredient => {
+                        if ingredient != COCOA {
+                            let idx = coffee_maker.clone().handler.get_index(ingredient.to_owned());
+                            notify_to_replenish_ingredient(has_to_replenish.clone(), idx);
+                        }
+                    }
+                    _ => return Err(err),
+                },
+            };
         }
 
-        coffee_maker.containers.get_ingredient(
-            &COCOA.to_owned(),
-            order.cocoa,
-            Some(dispenser_id),
-            coffee_maker.id,
-        )?;
-
-        notify_one_order_has_been_processed(orders_processed, dispenser_id, coffee_maker.id)?;
+        notify_one_order_processed(orders_processed, dispenser_id, coffee_maker.id)?;
 
         Ok(())
     }

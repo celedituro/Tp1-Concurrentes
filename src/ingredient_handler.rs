@@ -6,16 +6,22 @@ use crate::errors::Error;
 use crate::orders_handler::order_handler::notify_to_replenish_ingredient;
 
 const COFFEE: &str = "coffee";
-const WATER: &str = "water";
+const HOT_WATER: &str = "hot_water";
 const FOAM: &str = "foam";
 const GRAIN_COFFEE: &str = "grain_coffee";
 const MILK: &str = "milk";
+const COLD_WATER: &str = "cold_water";
+const COCOA: &str = "cocoa";
+
+const IDX_COFFEE: u32 = 0;
+const IDX_WATER: u32 = 1;
+const IDX_FOAM: u32 = 2;
 
 #[derive(Clone)]
 pub struct IHandler {
     coffee_maker_id: u32,
     containers: Containers,
-    values: HashMap<String, (String, u32, u32)>,
+    values: HashMap<String, (String, u32, u32, u32)>,
 }
 
 impl IHandler {
@@ -33,15 +39,20 @@ impl IHandler {
                 GRAIN_COFFEE.to_owned(),
                 replenish_value,
                 min_value_to_replenish,
+                IDX_COFFEE
             ),
         );
         ingredients.insert(
             FOAM.to_owned(),
-            (MILK.to_owned(), replenish_value, min_value_to_replenish),
+            (MILK.to_owned(), replenish_value, min_value_to_replenish,
+            IDX_FOAM
+        ),
         );
         ingredients.insert(
-            WATER.to_owned(),
-            ("".to_owned(), replenish_value, min_value_to_replenish),
+            HOT_WATER.to_owned(),
+            (COLD_WATER.to_owned(), replenish_value, min_value_to_replenish,
+            IDX_WATER
+        ),
         );
 
         IHandler {
@@ -63,20 +74,25 @@ impl IHandler {
         Ok(replenish)
     }
 
+    pub fn get_index(self, ingredient: String) -> u32 {
+        self.values[&ingredient].3
+    }
+
     /// Check if there is enough ingredient and notifies it to the ingredient handler.
     pub fn check_for_ingredient(
         &mut self,
         ingredient: String,
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
-        idx: u32,
     ) -> Result<(), Error> {
-        println!(
-            "[COFFEE MAKER {:?}]: CHECKING FOR {:?}",
-            self.coffee_maker_id, ingredient
-        );
-
-        if self.clone().has_to_replenish(&ingredient)? {
-            notify_to_replenish_ingredient(has_to_replenish, idx)
+        if ingredient != COCOA {
+            println!(
+                "[COFFEE MAKER {:?}]: CHECKING FOR {:?}",
+                self.coffee_maker_id, ingredient
+            );
+    
+            if self.clone().has_to_replenish(&ingredient)? {
+                notify_to_replenish_ingredient(has_to_replenish, self.clone().get_index(ingredient));
+            }
         }
 
         Ok(())
@@ -121,9 +137,7 @@ impl IHandler {
     /// If the ingredient is water, it only performs the increment of it.
     pub fn replenish(&mut self, ingredient: &String) -> Result<(), Error> {
         if self.clone().has_to_replenish(ingredient)? {
-            if ingredient != WATER {
-                self.get_ingredient(ingredient)?;
-            }
+            self.get_ingredient(ingredient)?;
             self.replenish_ingredient(ingredient)?;
         }
 
@@ -170,7 +184,7 @@ mod tests {
     use crate::{
         containers::Containers,
         errors::Error,
-        ingredient_handler::{COFFEE, FOAM, WATER},
+        ingredient_handler::{COFFEE, FOAM, HOT_WATER},
     };
 
     use super::IHandler;
@@ -183,7 +197,7 @@ mod tests {
             .replenish(&COFFEE.to_owned())
             .expect("Error when replenishing coffee");
         handler
-            .replenish(&WATER.to_owned())
+            .replenish(&HOT_WATER.to_owned())
             .expect("Error when replenishing water");
         handler
             .replenish(&FOAM.to_owned())
@@ -191,15 +205,15 @@ mod tests {
 
         let coffee_got = handler
             .containers
-            .get_quantity_of(&"coffee".to_string())
+            .get_quantity_of(&COFFEE.to_string())
             .expect("Error when locking coffee container");
         let foam_got = handler
             .containers
-            .get_quantity_of(&"foam".to_string())
+            .get_quantity_of(&FOAM.to_string())
             .expect("Error when locking foam container");
         let water_got = handler
             .containers
-            .get_quantity_of(&"water".to_string())
+            .get_quantity_of(&HOT_WATER.to_string())
             .expect("Error when locking water container");
 
         assert_eq!(coffee_got, 20);
@@ -215,7 +229,7 @@ mod tests {
             .replenish(&COFFEE.to_owned())
             .expect("Error when replenishing coffee");
         handler
-            .replenish(&WATER.to_owned())
+            .replenish(&HOT_WATER.to_owned())
             .expect("Error when replenishing water");
         handler
             .replenish(&FOAM.to_owned())

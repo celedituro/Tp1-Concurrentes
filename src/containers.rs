@@ -6,11 +6,13 @@ use std::{
 use crate::{container::Container, errors::Error};
 
 const COFFEE: &str = "coffee";
-const WATER: &str = "water";
+const HOT_WATER: &str = "hot_water";
 const COCOA: &str = "cocoa";
 const FOAM: &str = "foam";
 const GRAIN_COFFEE: &str = "grain_coffee";
 const MILK: &str = "milk";
+const COLD_WATER: &str = "cold_water";
+const INITIAL_QUANTITY_WATER: u32 = 1000;
 
 #[derive(Debug, Clone)]
 pub struct Containers {
@@ -26,8 +28,8 @@ impl Containers {
             Arc::new(RwLock::new(Container::new(COFFEE.to_owned(), max_value))),
         );
         containers.insert(
-            WATER.to_owned(),
-            Arc::new(RwLock::new(Container::new(WATER.to_owned(), max_value))),
+            HOT_WATER.to_owned(),
+            Arc::new(RwLock::new(Container::new(HOT_WATER.to_owned(), max_value))),
         );
         containers.insert(
             COCOA.to_owned(),
@@ -47,6 +49,10 @@ impl Containers {
         containers.insert(
             MILK.to_owned(),
             Arc::new(RwLock::new(Container::new(MILK.to_owned(), max_value))),
+        );
+        containers.insert(
+            COLD_WATER.to_owned(),
+            Arc::new(RwLock::new(Container::new(COLD_WATER.to_owned(), INITIAL_QUANTITY_WATER))),
         );
 
         Containers { all: containers }

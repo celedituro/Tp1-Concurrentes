@@ -5,11 +5,11 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: u32 = 1;
+const DISPENSERS: u32 = 2;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
-const WATER: &str = "water";
-const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, FOAM, WATER];
+const HOT_WATER: &str = "hot_water";
+const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, FOAM, HOT_WATER];
 
 #[derive(Clone)]
 pub struct CoffeeMaker {
@@ -204,10 +204,10 @@ mod tests {
             .containers
             .get_quantity_of(&"foam".to_string())
             .expect("Error when locking foam container");
-        let water_got = coffee_maker
+        let hot_water_got = coffee_maker
             .containers
-            .get_quantity_of(&"water".to_string())
-            .expect("Error when locking water container");
+            .get_quantity_of(&"hot_water".to_string())
+            .expect("Error when locking hot water container");
         let cocoa_got = coffee_maker
             .containers
             .get_quantity_of(&"cocoa".to_string())
@@ -215,7 +215,7 @@ mod tests {
 
         assert_eq!(coffee_got, 90);
         assert_eq!(foam_got, 95);
-        assert_eq!(water_got, 90);
+        assert_eq!(hot_water_got, 90);
         assert_eq!(cocoa_got, 95);
     }
 
@@ -243,17 +243,17 @@ mod tests {
             .containers
             .get_quantity_of(&"foam".to_string())
             .expect("Error when locking foam container");
-        let water_got = coffee_maker
+        let hot_water_got = coffee_maker
             .containers
-            .get_quantity_of(&"water".to_string())
-            .expect("Error when locking water container");
+            .get_quantity_of(&"hot_water".to_string())
+            .expect("Error when locking hot water container");
         let cocoa_got = coffee_maker
             .containers
             .get_quantity_of(&"cocoa".to_string())
             .expect("Error when locking cocoa container");
 
         assert_eq!(coffee_got, 50);
-        assert_eq!(water_got, 50);
+        assert_eq!(hot_water_got, 50);
         assert_eq!(cocoa_got, 75);
         assert_eq!(foam_got, 75);
     }
@@ -317,7 +317,7 @@ mod tests {
     }
 
     #[test]
-    fn test06_get_more_water_and_increase_the_quantity_of_water_container() {
+    fn test06_get_more_hot_water_and_increase_the_quantity_of_hot_water_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(5, 10, 5, 5);
         for _ in 0..10 {
@@ -332,15 +332,15 @@ mod tests {
             .start(&orders, orders_processed)
             .expect("Error when starting");
 
-        let water: u32 = coffee_maker.clone().containers.all["water"]
+        let hot_water: u32 = coffee_maker.clone().containers.all["hot_water"]
             .read()
-            .expect("Cant have read lock of the water container")
+            .expect("Cant have read lock of the hot water container")
             .quantity;
-        assert_eq!(water, 50);
+        assert_eq!(hot_water, 50);
     }
 
     #[test]
-    fn test07_replenish_value_of_water_is_greater_than_initial_quantity_and_can_replenish_water() {
+    fn test07_replenish_value_of_hot_water_is_greater_than_initial_quantity_and_can_replenish_hot_water() {
         let mut orders_list = Vec::new();
         let order = Order::new(5, 10, 5, 5);
         for _ in 0..5 {
@@ -355,10 +355,10 @@ mod tests {
             .start(&orders, orders_processed)
             .expect("Error when starting");
 
-        let water: u32 = coffee_maker.clone().containers.all["water"]
+        let hot_water: u32 = coffee_maker.clone().containers.all["hot_water"]
             .read()
-            .expect("Cant have read lock of the water container")
+            .expect("Cant have read lock of the hot water container")
             .quantity;
-        assert_eq!(water, 60);
+        assert_eq!(hot_water, 60);
     }
 }

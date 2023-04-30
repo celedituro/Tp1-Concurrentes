@@ -3,12 +3,21 @@ pub mod stats_maker {
     use std::collections::HashMap;
 
     use crate::{coffee_maker::CoffeeMaker, containers::Containers};
-
-    const INGREDIENTS: [&str; 6] = ["coffee", "water", "cocoa", "foam", "grain_coffee", "milk"];
+    
     const COFFEE: &str = "coffee";
     const FOAM: &str = "foam";
+    const HOT_WATER: &str = "hot_water";
+    const COCOA: &str = "cocoa";
+
     const GRAIN_COFFEE: &str = "grain_coffee";
     const MILK: &str = "milk";
+    const COLD_WATER: &str = "cold_water";
+
+    const INITIAL_QUANTITY_WATER: u32 = 1000;
+
+    const INGREDIENTS: [&str; 7] = [COFFEE, HOT_WATER, COCOA, FOAM, GRAIN_COFFEE, MILK, COLD_WATER];
+    const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, FOAM, HOT_WATER];
+    const RESOURCE_INGREDIENTS: [&str; 3] = [GRAIN_COFFEE, MILK, COLD_WATER];
 
     /// Gets the current quantity of all the containers of all the coffee machines.
     fn get_quantity_of(containers: Containers) -> HashMap<String, u32> {
@@ -34,19 +43,32 @@ pub mod stats_maker {
         vec
     }
 
-    fn update_replenishing_ingredient(
+    fn update_replenishing_ingredients(
         mut ingredients_consumed: HashMap<String, u32>,
-        ingredient: String,
-        resource: String,
     ) -> HashMap<String, u32> {
-        if ingredients_consumed[&resource] > 0 {
-            println!("distinto de cero {}", ingredients_consumed[&resource]);
-            let value = ingredients_consumed[&ingredient];
-            let updated_value = value + ingredients_consumed[&resource];
-            ingredients_consumed.insert(ingredient, updated_value);
-        };
+        for (idx, ingredient) in INGREDIENTS_TO_REPLENISH.iter().enumerate() {
+            let resource = RESOURCE_INGREDIENTS[idx];
+            if ingredients_consumed[resource] > 0 {
+                let value = ingredients_consumed[ingredient.to_owned()];
+                let updated_value = value + ingredients_consumed[resource];
+                ingredients_consumed.insert(ingredient.to_string(), updated_value);
+            };
+        }
+
 
         ingredients_consumed
+    }
+
+    /// Gets the consumed quantity if the ingredient received.
+    fn get_quantity_consumed(ingredient: String, current: u32, containers_level: Vec<HashMap<String, u32>>, initial_quantity: u32) -> u32 {
+        let quantity: u32;
+        if ingredient == COLD_WATER {
+            quantity = (containers_level.len() as u32*INITIAL_QUANTITY_WATER) - current;
+        } else {
+            quantity = initial_quantity - current;
+        }
+
+        quantity
     }
 
     /// Shows the current quantity of ingredients consumed between all the containers of all the
@@ -61,24 +83,11 @@ pub mod stats_maker {
             for i in containers_level.clone() {
                 current += i[&ingredient.to_owned()];
             }
+            ingredients_consumed.insert(ingredient.to_owned(), get_quantity_consumed(ingredient.to_owned(), current, containers_level.clone(), initial_quantity));
 
-            ingredients_consumed.insert(ingredient.to_owned(), initial_quantity - current);
         }
-        println!("ingredients consumed before: {:?}", ingredients_consumed);
 
-        ingredients_consumed = update_replenishing_ingredient(
-            ingredients_consumed.clone(),
-            COFFEE.to_owned(),
-            GRAIN_COFFEE.to_owned(),
-        );
-        ingredients_consumed = update_replenishing_ingredient(
-            ingredients_consumed.clone(),
-            FOAM.to_owned(),
-            MILK.to_owned(),
-        );
-
-        println!("ingredients consumed after: {:?}", ingredients_consumed);
-        ingredients_consumed
+        update_replenishing_ingredients(ingredients_consumed)
     }
 }
 
@@ -113,7 +122,7 @@ mod tests {
         }
         let containers_level_got = get_containers_info(coffee_makers);
         assert_eq!(containers_level_got[0]["coffee"], 100);
-        assert_eq!(containers_level_got[0]["water"], 100);
+        assert_eq!(containers_level_got[0]["hot_water"], 100);
         assert_eq!(containers_level_got[0]["foam"], 100);
         assert_eq!(containers_level_got[0]["cocoa"], 100);
         assert_eq!(containers_level_got[0]["grain_coffee"], 100);
@@ -140,7 +149,7 @@ mod tests {
         }
         let containers_level_got = get_containers_info(coffee_makers);
         assert_eq!(containers_level_got[0]["coffee"], 90);
-        assert_eq!(containers_level_got[0]["water"], 90);
+        assert_eq!(containers_level_got[0]["hot_water"], 90);
         assert_eq!(containers_level_got[0]["foam"], 95);
         assert_eq!(containers_level_got[0]["cocoa"], 95);
         assert_eq!(containers_level_got[0]["grain_coffee"], 100);
@@ -170,7 +179,7 @@ mod tests {
         }
         let containers_level_got = get_containers_info(coffee_makers);
         assert_eq!(containers_level_got[0]["coffee"], 50);
-        assert_eq!(containers_level_got[0]["water"], 50);
+        assert_eq!(containers_level_got[0]["hot_water"], 50);
         assert_eq!(containers_level_got[0]["foam"], 75);
         assert_eq!(containers_level_got[0]["cocoa"], 75);
         assert_eq!(containers_level_got[0]["grain_coffee"], 100);
@@ -200,7 +209,7 @@ mod tests {
         }
         let containers_level_got = get_containers_info(coffee_makers);
         assert_eq!(containers_level_got[0]["coffee"], 50);
-        assert_eq!(containers_level_got[0]["water"], 50);
+        assert_eq!(containers_level_got[0]["hot_water"], 50);
         assert_eq!(containers_level_got[0]["foam"], 50);
         assert_eq!(containers_level_got[0]["cocoa"], 50);
         assert_eq!(containers_level_got[0]["grain_coffee"], 50);
@@ -226,7 +235,7 @@ mod tests {
         let containers_level = get_containers_info(coffee_makers);
         let ingredients_consumed_got = get_ingredients_consumed(containers_level, 100);
         assert_eq!(ingredients_consumed_got["coffee"], 0);
-        assert_eq!(ingredients_consumed_got["water"], 0);
+        assert_eq!(ingredients_consumed_got["hot_water"], 0);
         assert_eq!(ingredients_consumed_got["foam"], 0);
         assert_eq!(ingredients_consumed_got["cocoa"], 0);
         assert_eq!(ingredients_consumed_got["grain_coffee"], 0);
@@ -234,7 +243,7 @@ mod tests {
     }
 
     #[test]
-    fn test06_get_one_coffee_maker_with_orders_processed_and_ingredients_consumed_are_updated() {
+    fn test06_get_one_coffee_maker_with_one_order_processed_and_ingredients_consumed_are_updated() {
         let mut coffee_makers = Vec::new();
         coffee_makers.push(CoffeeMaker::new(0, 100, 50, 10));
         let mut orders_list = Vec::new();
@@ -250,7 +259,7 @@ mod tests {
         let containers_level = get_containers_info(coffee_makers);
         let ingredients_consumed_got = get_ingredients_consumed(containers_level, 100);
         assert_eq!(ingredients_consumed_got["coffee"], 10);
-        assert_eq!(ingredients_consumed_got["water"], 10);
+        assert_eq!(ingredients_consumed_got["hot_water"], 10);
         assert_eq!(ingredients_consumed_got["foam"], 5);
         assert_eq!(ingredients_consumed_got["cocoa"], 5);
         assert_eq!(ingredients_consumed_got["grain_coffee"], 0);
@@ -277,7 +286,7 @@ mod tests {
         let containers_level = get_containers_info(coffee_makers);
         let ingredients_consumed_got = get_ingredients_consumed(containers_level, 100);
         assert_eq!(ingredients_consumed_got["coffee"], 50);
-        assert_eq!(ingredients_consumed_got["water"], 50);
+        assert_eq!(ingredients_consumed_got["hot_water"], 50);
         assert_eq!(ingredients_consumed_got["foam"], 25);
         assert_eq!(ingredients_consumed_got["cocoa"], 25);
         assert_eq!(ingredients_consumed_got["grain_coffee"], 0);
@@ -320,7 +329,7 @@ mod tests {
         let containers_level = get_containers_info(coffee_makers);
         let ingredients_consumed_got = get_ingredients_consumed(containers_level, 2 * 100);
         assert_eq!(ingredients_consumed_got["coffee"], 100);
-        //assert_eq!(ingredients_consumed_got["water"], 100);
+        assert_eq!(ingredients_consumed_got["hot_water"], 100);
         assert_eq!(ingredients_consumed_got["foam"], 50);
         assert_eq!(ingredients_consumed_got["cocoa"], 50);
     }
