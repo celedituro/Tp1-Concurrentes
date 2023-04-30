@@ -81,22 +81,16 @@ pub mod dispenser {
                                 .get_index(ingredient.to_owned());
 
                             notify_to_replenish_ingredient(has_to_replenish.clone(), idx);
-
-                            let (has_to_replenish_lock, _condvar) = &*has_to_replenish;
-                            if let Ok(has_to_replenish) = has_to_replenish_lock.lock() {
-                                println!(
-                                    "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: WAITING TO {:?} TO BE REPLENISH SINCE {:?}",
-                                        dispenser_id, coffee_maker.id, ingredient, has_to_replenish
-                                );
-                                if has_to_replenish[idx as usize] {
-                                    coffee_maker.containers.clone().get_ingredient(
-                                        &ingredient.to_owned(),
-                                        hash_order[ingredient],
-                                        Some(dispenser_id),
-                                        coffee_maker.id,
-                                    )?
-                                }
-                            }
+                            println!(
+                                "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: TRY GET {:?} AGAIN",
+                                dispenser_id, coffee_maker.id, ingredient
+                            );
+                            coffee_maker.containers.clone().get_ingredient(
+                                &ingredient.to_owned(),
+                                hash_order[ingredient],
+                                Some(dispenser_id),
+                                coffee_maker.id,
+                            )?
                         }
                     }
                     _ => return Err(err),

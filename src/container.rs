@@ -1,4 +1,4 @@
-//use std::time::Duration;
+use std::time::Duration;
 
 use crate::errors::Error;
 
@@ -30,7 +30,7 @@ impl Container {
         );
         if self.quantity >= value {
             self.quantity -= value;
-            //std::thread::sleep(Duration::from_secs(1));
+            std::thread::sleep(Duration::from_secs(1));
         } else {
             return Err(Error::NotEnoughIngredient);
         };
@@ -45,7 +45,7 @@ impl Container {
             coffee_maker_id, value, self.name, self.quantity
         );
         self.quantity += value;
-        //std::thread::sleep(Duration::from_secs(1));
+        std::thread::sleep(Duration::from_secs(1));
 
         Ok(())
     }

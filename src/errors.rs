@@ -9,6 +9,5 @@ pub enum Error {
     CantWriteOrdersLock,
     CantWriteContainerLock,
     CantReadContainerLock,
-    NoMoreIngredient,
     CantHaveOrdersProcessedLock,
 }

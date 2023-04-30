@@ -36,9 +36,6 @@ pub mod presenter {
                     "[{:?} CONTAINER] OF [COFFEE MACHINE {:?}]: {:?}",
                     ingredient, id as i32, quantity
                 );
-                if quantity == 0 {
-                    return Err(Error::NoMoreIngredient);
-                }
             }
         }
 
@@ -110,7 +107,7 @@ pub mod presenter {
                 }
             }
             match present_statistics(coffee_makers.clone(), orders_processed.clone()) {
-                Ok(_) => thread::sleep(Duration::from_secs(1)),
+                Ok(_) => thread::sleep(Duration::from_secs(3)),
                 Err(error) => {
                     println!("[PRESENTER]: {:?}", error);
                     break;

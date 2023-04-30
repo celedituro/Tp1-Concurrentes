@@ -5,7 +5,7 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: u32 = 3;
+const DISPENSERS: u32 = 2;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
 const HOT_WATER: &str = "hot_water";
@@ -122,7 +122,7 @@ impl CoffeeMaker {
                         i, self.id
                     );
                     if condvar
-                        .wait_while(handler_is_awake, |v| v.iter().all(|&b| !b))
+                        .wait_while(handler_is_awake, |v| v.iter().any(|&b| !b))
                         .is_ok()
                     {
                         println!(
