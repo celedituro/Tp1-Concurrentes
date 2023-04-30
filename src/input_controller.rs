@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use crate::{errors::Error, orders::Order};
 
 #[derive(Clone, Debug)]
@@ -34,7 +36,11 @@ impl InputController {
     /// Reads the filename entered from user and returns a vector of orders if it can,
     /// returns an error if not.
     pub fn get_orders(self) -> Result<Vec<Order>, Error> {
-        let orders = match std::fs::read_to_string(self.clone().filename) {
+        let dir = Path::new("resources/");
+        let file = Path::new(&self.filename);
+        let path = dir.join(file);
+
+        let orders = match std::fs::read_to_string(path) {
             Ok(orders) => orders,
             Err(_e) => return Err(Error::FileNotFound),
         };

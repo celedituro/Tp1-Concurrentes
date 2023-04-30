@@ -5,13 +5,17 @@ pub mod order_handler {
         coffee_maker::CoffeeMaker, dispensers::dispenser::make_order, errors::Error, orders::Order,
     };
 
+    const IDX_COFFEE: u32 = 0;
+    const IDX_WATER: u32 = 1;
+    const IDX_FOAM: u32 = 2;
+
     /// Notifies to replenish an ingredient.
     pub fn notify_to_replenish(has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>) {
         let (has_to_replenish_lock, condvar) = &*has_to_replenish;
         if let Ok(mut has_to_replenish) = has_to_replenish_lock.lock() {
-            has_to_replenish[0] = true;
-            has_to_replenish[1] = true;
-            has_to_replenish[2] = true;
+            has_to_replenish[IDX_COFFEE as usize] = true;
+            has_to_replenish[IDX_FOAM as usize] = true;
+            has_to_replenish[IDX_WATER as usize] = true;
         }
         condvar.notify_all();
     }

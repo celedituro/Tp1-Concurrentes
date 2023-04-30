@@ -68,8 +68,8 @@ pub mod dispenser {
             ) {
                 Ok(_) => {
                     println!(
-                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT COFFEE",
-                        dispenser_id, coffee_maker.id
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: GOT {:?}",
+                        dispenser_id, coffee_maker.id, ingredient
                     );
                     if ingredient != COCOA {
                         coffee_maker.clone().handler.check_for_ingredient(
