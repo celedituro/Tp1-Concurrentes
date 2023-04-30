@@ -1,5 +1,8 @@
 pub mod dispenser {
-    use std::{sync::{Arc, Condvar, Mutex}, collections::HashMap};
+    use std::{
+        collections::HashMap,
+        sync::{Arc, Condvar, Mutex},
+    };
 
     use crate::{
         coffee_maker::CoffeeMaker, errors::Error, orders::Order,
@@ -35,7 +38,7 @@ pub mod dispenser {
     }
 
     fn convert_to_hash(order: Order) -> HashMap<String, u32> {
-        let mut hash_order: HashMap<String, u32>= HashMap::new();
+        let mut hash_order: HashMap<String, u32> = HashMap::new();
         hash_order.insert(COFFEE.to_owned(), order.coffee);
         hash_order.insert(FOAM.to_owned(), order.foam);
         hash_order.insert(HOT_WATER.to_owned(), order.water);
@@ -78,7 +81,10 @@ pub mod dispenser {
                 Err(err) => match err {
                     Error::NotEnoughIngredient => {
                         if ingredient != COCOA {
-                            let idx = coffee_maker.clone().handler.get_index(ingredient.to_owned());
+                            let idx = coffee_maker
+                                .clone()
+                                .handler
+                                .get_index(ingredient.to_owned());
                             notify_to_replenish_ingredient(has_to_replenish.clone(), idx);
                         }
                     }

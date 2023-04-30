@@ -5,7 +5,7 @@ use crate::{errors::Error, orders::Order};
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: u32 = 2;
+const DISPENSERS: u32 = 3;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
 const HOT_WATER: &str = "hot_water";
@@ -115,15 +115,16 @@ impl CoffeeMaker {
                 let (handle_is_awake_lock, condvar) = &*handler_is_awake;
                 if let Ok(handler_is_awake) = handle_is_awake_lock.lock() {
                     println!(
-                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: WAITING SINCE HANDLER IS AWAKE IS {:?}",
-                        i, self.id, handler_is_awake
+                        "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: WAITING SINCE HANDLER IS NOT AWAKE",
+                        i, self.id
                     );
-                    if let Ok(value) =
-                        condvar.wait_while(handler_is_awake, |v| v.iter().any(|&b| !b))
+                    if condvar
+                        .wait_while(handler_is_awake, |v| v.iter().all(|&b| !b))
+                        .is_ok()
                     {
                         println!(
-                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING SINCE {:?}",
-                            i, self.id, value
+                            "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: STARTING SINCE HANDLER IS AWAKE",
+                            i, self.id
                         );
                         process_order(
                             orders,
@@ -340,7 +341,8 @@ mod tests {
     }
 
     #[test]
-    fn test07_replenish_value_of_hot_water_is_greater_than_initial_quantity_and_can_replenish_hot_water() {
+    fn test07_replenish_value_of_hot_water_is_greater_than_initial_quantity_and_can_replenish_hot_water(
+    ) {
         let mut orders_list = Vec::new();
         let order = Order::new(5, 10, 5, 5);
         for _ in 0..5 {

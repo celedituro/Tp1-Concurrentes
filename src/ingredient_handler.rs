@@ -39,20 +39,26 @@ impl IHandler {
                 GRAIN_COFFEE.to_owned(),
                 replenish_value,
                 min_value_to_replenish,
-                IDX_COFFEE
+                IDX_COFFEE,
             ),
         );
         ingredients.insert(
             FOAM.to_owned(),
-            (MILK.to_owned(), replenish_value, min_value_to_replenish,
-            IDX_FOAM
-        ),
+            (
+                MILK.to_owned(),
+                replenish_value,
+                min_value_to_replenish,
+                IDX_FOAM,
+            ),
         );
         ingredients.insert(
             HOT_WATER.to_owned(),
-            (COLD_WATER.to_owned(), replenish_value, min_value_to_replenish,
-            IDX_WATER
-        ),
+            (
+                COLD_WATER.to_owned(),
+                replenish_value,
+                min_value_to_replenish,
+                IDX_WATER,
+            ),
         );
 
         IHandler {
@@ -89,9 +95,12 @@ impl IHandler {
                 "[COFFEE MAKER {:?}]: CHECKING FOR {:?}",
                 self.coffee_maker_id, ingredient
             );
-    
+
             if self.clone().has_to_replenish(&ingredient)? {
-                notify_to_replenish_ingredient(has_to_replenish, self.clone().get_index(ingredient));
+                notify_to_replenish_ingredient(
+                    has_to_replenish,
+                    self.clone().get_index(ingredient),
+                );
             }
         }
 
@@ -161,8 +170,8 @@ impl IHandler {
         let (has_to_replenish_lock, condvar) = &*has_to_replenish;
         if let Ok(has_to_replenish) = has_to_replenish_lock.lock() {
             println!(
-                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: WAITING SINCE HAS TO REPLENISH {:?} IS {:?}",
-                self.coffee_maker_id, ingredient, has_to_replenish
+                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: WAITING TO REPLENISH {:?}",
+                self.coffee_maker_id, ingredient
             );
             if let Ok(mut has_to_replenish) = condvar.wait_while(has_to_replenish, |v| !v[idx]) {
                 println!(

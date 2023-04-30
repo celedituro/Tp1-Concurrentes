@@ -14,7 +14,14 @@ pub mod presenter {
         stat_maker::stats_maker::{get_containers_info, get_ingredients_consumed},
     };
 
-    const INGREDIENTS: [&str; 6] = ["coffee", "hot_water", "cocoa", "foam", "grain_coffee", "milk"];
+    const INGREDIENTS: [&str; 6] = [
+        "coffee",
+        "hot_water",
+        "cocoa",
+        "foam",
+        "grain_coffee",
+        "milk",
+    ];
     const INITIAL_QUANTITY: u32 = 100;
 
     /// Shows the current quantity of all the containers of all the coffee machines.

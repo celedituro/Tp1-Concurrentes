@@ -3,7 +3,7 @@ pub mod stats_maker {
     use std::collections::HashMap;
 
     use crate::{coffee_maker::CoffeeMaker, containers::Containers};
-    
+
     const COFFEE: &str = "coffee";
     const FOAM: &str = "foam";
     const HOT_WATER: &str = "hot_water";
@@ -15,7 +15,15 @@ pub mod stats_maker {
 
     const INITIAL_QUANTITY_WATER: u32 = 1000;
 
-    const INGREDIENTS: [&str; 7] = [COFFEE, HOT_WATER, COCOA, FOAM, GRAIN_COFFEE, MILK, COLD_WATER];
+    const INGREDIENTS: [&str; 7] = [
+        COFFEE,
+        HOT_WATER,
+        COCOA,
+        FOAM,
+        GRAIN_COFFEE,
+        MILK,
+        COLD_WATER,
+    ];
     const INGREDIENTS_TO_REPLENISH: [&str; 3] = [COFFEE, FOAM, HOT_WATER];
     const RESOURCE_INGREDIENTS: [&str; 3] = [GRAIN_COFFEE, MILK, COLD_WATER];
 
@@ -55,18 +63,21 @@ pub mod stats_maker {
             };
         }
 
-
         ingredients_consumed
     }
 
     /// Gets the consumed quantity if the ingredient received.
-    fn get_quantity_consumed(ingredient: String, current: u32, containers_level: Vec<HashMap<String, u32>>, initial_quantity: u32) -> u32 {
-        let quantity: u32;
-        if ingredient == COLD_WATER {
-            quantity = (containers_level.len() as u32*INITIAL_QUANTITY_WATER) - current;
+    fn get_quantity_consumed(
+        ingredient: String,
+        current: u32,
+        containers_level: Vec<HashMap<String, u32>>,
+        initial_quantity: u32,
+    ) -> u32 {
+        let quantity: u32 = if ingredient == COLD_WATER {
+            (containers_level.len() as u32 * INITIAL_QUANTITY_WATER) - current
         } else {
-            quantity = initial_quantity - current;
-        }
+            initial_quantity - current
+        };
 
         quantity
     }
@@ -83,8 +94,15 @@ pub mod stats_maker {
             for i in containers_level.clone() {
                 current += i[&ingredient.to_owned()];
             }
-            ingredients_consumed.insert(ingredient.to_owned(), get_quantity_consumed(ingredient.to_owned(), current, containers_level.clone(), initial_quantity));
-
+            ingredients_consumed.insert(
+                ingredient.to_owned(),
+                get_quantity_consumed(
+                    ingredient.to_owned(),
+                    current,
+                    containers_level.clone(),
+                    initial_quantity,
+                ),
+            );
         }
 
         update_replenishing_ingredients(ingredients_consumed)

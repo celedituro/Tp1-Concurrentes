@@ -52,7 +52,10 @@ impl Containers {
         );
         containers.insert(
             COLD_WATER.to_owned(),
-            Arc::new(RwLock::new(Container::new(COLD_WATER.to_owned(), INITIAL_QUANTITY_WATER))),
+            Arc::new(RwLock::new(Container::new(
+                COLD_WATER.to_owned(),
+                INITIAL_QUANTITY_WATER,
+            ))),
         );
 
         Containers { all: containers }
