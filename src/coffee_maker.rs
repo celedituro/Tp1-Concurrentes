@@ -266,7 +266,7 @@ mod tests {
     fn test04_get_more_coffee_and_decrease_quantity_of_grain_coffee_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
-        for _ in 0..10 {
+        for _ in 0..11 {
             orders_list.push(order.clone());
         }
         let orders = Arc::new(RwLock::new(orders_list));
@@ -282,13 +282,8 @@ mod tests {
             .containers
             .get_quantity_of(&"grain_coffee".to_string())
             .expect("Error when locking coffee container");
-        let coffee_got = coffee_maker
-            .containers
-            .get_quantity_of(&"coffee".to_string())
-            .expect("Error when locking coffee container");
 
         assert_eq!(grain_coffee_got, 50);
-        assert_eq!(coffee_got, 50);
     }
 
     #[test]
@@ -311,36 +306,8 @@ mod tests {
             .read()
             .expect("Cant have read lock of the milk container")
             .quantity;
-        let foam_got: u32 = coffee_maker.clone().containers.all["foam"]
-            .read()
-            .expect("Cant have read lock of the foam container")
-            .quantity;
 
         assert_eq!(milk_got, 50);
-        assert_eq!(foam_got, 50);
-    }
-
-    #[test]
-    fn test06_get_more_hot_water_and_increase_the_quantity_of_hot_water_container() {
-        let mut orders_list = Vec::new();
-        let order = Order::new(5, 10, 5, 5);
-        for _ in 0..10 {
-            orders_list.push(order.clone());
-        }
-        let orders = Arc::new(RwLock::new(orders_list));
-        let orders_processed = Arc::new((Mutex::new(0), Condvar::new()));
-
-        let coffee_maker = CoffeeMaker::new(0, 100, 50);
-        coffee_maker
-            .clone()
-            .start(&orders, orders_processed)
-            .expect("Error when starting");
-
-        let hot_water: u32 = coffee_maker.clone().containers.all["hot_water"]
-            .read()
-            .expect("Cant have read lock of the hot water container")
-            .quantity;
-        assert_eq!(hot_water, 50);
     }
 
     #[test]

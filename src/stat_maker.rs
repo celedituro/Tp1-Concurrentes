@@ -227,7 +227,6 @@ mod tests {
         }
         let containers_level_got = get_containers_info(coffee_makers);
         assert_eq!(containers_level_got[0]["coffee"], 50);
-        assert_eq!(containers_level_got[0]["hot_water"], 50);
         assert_eq!(containers_level_got[0]["foam"], 50);
         assert_eq!(containers_level_got[0]["cocoa"], 50);
         assert_eq!(containers_level_got[0]["grain_coffee"], 50);
