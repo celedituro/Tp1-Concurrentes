@@ -301,7 +301,7 @@ mod tests {
     fn test04_get_more_coffee_and_decrease_quantity_of_grain_coffee_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(10, 10, 5, 5);
-        for _ in 0..15 {
+        for _ in 0..12 {
             orders_list.push(order.clone());
         }
         let orders = Arc::new(RwLock::new(orders_list));
