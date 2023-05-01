@@ -20,6 +20,18 @@ pub mod order_handler {
         condvar.notify_all();
     }
 
+    /// Notifies to alert that the quantity of containers is less than a quarter in
+    /// order to finalize a thread.
+    pub fn notify_to_alert(has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>) {
+        let (has_to_alert_lock, condvar) = &*has_to_alert;
+        if let Ok(mut has_to_alert) = has_to_alert_lock.lock() {
+            has_to_alert[IDX_COFFEE as usize] = true;
+            has_to_alert[IDX_FOAM as usize] = true;
+            has_to_alert[IDX_WATER as usize] = true;
+        }
+        condvar.notify_all();
+    }
+
     /// Notifies to replenish an ingredient.
     pub fn notify_to_replenish_ingredient(
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
@@ -39,12 +51,14 @@ pub mod order_handler {
     fn get_order(
         orders: Arc<RwLock<Vec<Order>>>,
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<Order, Error> {
         let order = if let Ok(mut orders) = orders.write() {
             if !orders.is_empty() {
                 orders.remove(0)
             } else {
                 notify_to_replenish(has_to_replenish, true);
+                notify_to_alert(has_to_alert);
                 return Err(Error::NoMoreOrders);
             }
         } else {
@@ -62,9 +76,14 @@ pub mod order_handler {
         dispenser_id: u32,
         orders_processed: Arc<(Mutex<i32>, Condvar)>,
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<(), Error> {
         loop {
-            match get_order(orders.clone(), has_to_replenish.clone()) {
+            match get_order(
+                orders.clone(),
+                has_to_replenish.clone(),
+                has_to_alert.clone(),
+            ) {
                 Ok(order) => {
                     println!(
                         "[DISPENSER {:?}] OF [COFFEE MAKER {:?}]: MAKING {:?}",

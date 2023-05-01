@@ -10,10 +10,18 @@ const FOAM: &str = "foam";
 const GRAIN_COFFEE: &str = "grain_coffee";
 const MILK: &str = "milk";
 const COLD_WATER: &str = "cold_water";
+const COCOA: &str = "cocoa";
 
 const IDX_COFFEE: u32 = 0;
 const IDX_WATER: u32 = 1;
 const IDX_FOAM: u32 = 2;
+
+const RESOURCES_TO_ALARM: [&str; 3] = [GRAIN_COFFEE, MILK, COCOA];
+const VALUE_TO_ALERT: u32 = 50;
+
+const IDX_GRAIN_COFFEE: u32 = 0;
+const IDX_MILK: u32 = 1;
+const IDX_COCOA: u32 = 2;
 
 #[derive(Clone)]
 pub struct IHandler {
@@ -46,12 +54,69 @@ impl IHandler {
         }
     }
 
+    /// Notifies to alert an ingredient.
+    pub fn notify_to_alert_ingredient(
+        self,
+        has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        idx: u32,
+    ) {
+        let (has_to_alert_lock, condvar) = &*has_to_alert;
+        if let Ok(mut has_to_alert) = has_to_alert_lock.lock() {
+            if !has_to_alert[idx as usize] {
+                has_to_alert[idx as usize] = true;
+            }
+        }
+        condvar.notify_all();
+    }
+
+    fn get_resources_indexes(self) -> HashMap<String, u32> {
+        let mut values = HashMap::new();
+        values.insert(GRAIN_COFFEE.to_owned(), IDX_GRAIN_COFFEE);
+        values.insert(MILK.to_owned(), IDX_MILK);
+        values.insert(COCOA.to_owned(), IDX_COCOA);
+
+        values
+    }
+
+    pub fn check_for_resources(self, has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>) {
+        println!(
+            "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: CHECKING RESOURCES",
+            self.coffee_maker_id
+        );
+        let indexes = self.clone().get_resources_indexes();
+
+        for resource in RESOURCES_TO_ALARM {
+            println!(
+                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: CHECKING FOR {}",
+                self.coffee_maker_id, resource
+            );
+            if let Ok(quantity) = self
+                .clone()
+                .containers
+                .get_quantity_of(&resource.to_owned())
+            {
+                println!(
+                    "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: {} HAS {}",
+                    self.coffee_maker_id, resource, quantity
+                );
+                if quantity == VALUE_TO_ALERT {
+                    println!(
+                        "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: {} HAS TO BE ALERTED",
+                        self.coffee_maker_id, resource
+                    );
+                    self.clone()
+                        .notify_to_alert_ingredient(has_to_alert.clone(), indexes[resource]);
+                }
+            }
+        }
+    }
+
     /// Returns true if there is not enough ingredient, false if there is.
     fn has_to_replenish(self, ingredient: &String) -> Result<bool, Error> {
         let current_quantity = self.containers.get_quantity_of(ingredient)?;
         let replenish = current_quantity == 0;
         println!(
-            "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: ¿HAS TO REPLENISH {:?}? {:?}",
+            "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: ¿HAS TO REPLENISH {:?}? {:?}",
             self.coffee_maker_id, ingredient, replenish
         );
 
@@ -66,7 +131,7 @@ impl IHandler {
     fn get_ingredient(&mut self, ingredient: &String) -> Result<(), Error> {
         let resource = &self.values[ingredient].0;
         println!(
-            "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: EXTRACTING FROM {:?} CONTAINER",
+            "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: EXTRACTING FROM {:?} CONTAINER",
             self.coffee_maker_id, resource
         );
         self.containers.clone().get_ingredient(
@@ -83,7 +148,7 @@ impl IHandler {
     pub fn replenish_ingredient(&mut self, ingredient: &String) -> Result<(), Error> {
         if self.clone().has_to_replenish(ingredient)? {
             println!(
-                "[INGREDIENT HANDLER] IN [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
+                "[INGREDIENT HANDLER] OF [COFFEE MAKER {:?}]: GETTING MORE {:?} ",
                 self.coffee_maker_id, ingredient
             );
             self.containers.clone().replenish_ingredient(
@@ -115,6 +180,7 @@ impl IHandler {
         has_to_replenish: Arc<(Mutex<Vec<bool>>, Condvar)>,
         handler_is_awake: Arc<(Mutex<Vec<bool>>, Condvar)>,
         idx: usize,
+        has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>,
     ) -> Result<(), Error> {
         let (handler_is_awake_lock, condvar) = &*handler_is_awake;
         if let Ok(mut handler_is_awake) = handler_is_awake_lock.lock() {
@@ -149,6 +215,7 @@ impl IHandler {
                         );
                     }
                 }
+                self.clone().check_for_resources(has_to_alert);
             }
             condvar.notify_all();
         }

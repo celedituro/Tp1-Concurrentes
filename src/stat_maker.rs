@@ -28,7 +28,7 @@ pub mod stats_maker {
     const RESOURCE_INGREDIENTS: [&str; 3] = [GRAIN_COFFEE, MILK, COLD_WATER];
 
     /// Gets the current quantity of all the containers of all the coffee machines.
-    fn get_quantity_of(containers: Containers) -> HashMap<String, u32> {
+    pub fn get_quantity_of(containers: Containers) -> HashMap<String, u32> {
         let mut level_of_containers = HashMap::new();
         for ingredient in INGREDIENTS {
             if let Ok(quantity) = containers.clone().get_quantity_of(&ingredient.to_owned()) {

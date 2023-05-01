@@ -4,14 +4,15 @@ pub mod presenter {
         collections::HashMap,
         sync::{Arc, Condvar, Mutex, RwLock},
         thread,
-        time::Duration,
+        //time::Duration,
     };
 
     use crate::{
         coffee_maker::CoffeeMaker,
+        containers::Containers,
         errors::Error,
         orders::Order,
-        stat_maker::stats_maker::{get_containers_info, get_ingredients_consumed},
+        stat_maker::stats_maker::{get_containers_info, get_ingredients_consumed, get_quantity_of},
     };
 
     const INGREDIENTS: [&str; 6] = [
@@ -23,6 +24,7 @@ pub mod presenter {
         "milk",
     ];
     const INITIAL_QUANTITY: u32 = 100;
+    const VALUE_TO_ALERT: u32 = 50;
 
     /// Shows the current quantity of all the containers of all the coffee machines.
     pub fn present_level_of_containers(
@@ -99,15 +101,17 @@ pub mod presenter {
         orders: Arc<RwLock<Vec<Order>>>,
     ) -> Result<(), Error> {
         let presenter_handle = thread::spawn(move || loop {
-            println!("[PRESENTER]: PREPARING STATS");
+            println!("[PRESENTER]: STARTING");
             if let Ok(orders) = orders.read() {
                 if orders.is_empty() {
                     println!("[PRESENTER]: FINISHING SINCE NO MORE ORDERS");
                     break;
                 }
             }
+
             match present_statistics(coffee_makers.clone(), orders_processed.clone()) {
-                Ok(_) => thread::sleep(Duration::from_secs(3)),
+                Ok(_) => println!("[PRESENTER]: FINISHING"),
+                //thread::sleep(Duration::from_secs(3)),
                 Err(error) => {
                     println!("[PRESENTER]: {:?}", error);
                     break;
@@ -119,6 +123,73 @@ pub mod presenter {
             Ok(_) => println!("[PRESENTER]: FINISHING"),
             Err(_) => println!("[PRESENTER]: ERROR WHEN JOINING"),
         };
+
+        Ok(())
+    }
+
+    /// Shows an alert if the level of grain coffee container, the milk container or the cocoa container
+    /// is less than quarter of its initial capacity.
+    pub fn show_alert_of_capacity(
+        orders: Arc<RwLock<Vec<Order>>>,
+        containers: Containers,
+        coffee_maker_id: u32,
+        has_to_alert: Arc<(Mutex<Vec<bool>>, Condvar)>,
+        values: HashMap<i32, String>,
+    ) -> Result<(), Error> {
+        let handle = thread::spawn(move || loop {
+            println!(
+                "[ALERTER] OF [COFFEE MAKER {:?}]: STARTING",
+                coffee_maker_id
+            );
+            if let Ok(orders) = orders.read() {
+                if orders.is_empty() {
+                    println!(
+                        "[ALERTER] OF [COFFEE MAKER {:?}]: FINISHING SINCE NO MORE ORDERS",
+                        coffee_maker_id
+                    );
+                    break;
+                }
+            }
+
+            let (has_to_alert_lock, condvar) = &*has_to_alert;
+            if let Ok(has_to_alert) = has_to_alert_lock.lock() {
+                println!(
+                    "[ALERTER] OF [COFFEE MAKER {:?}]: WAITING SINCE HAS TO ALERT {:?}",
+                    coffee_maker_id, has_to_alert
+                );
+                if let Ok(mut has_to_alert) =
+                    condvar.wait_while(has_to_alert, |v| v.iter().all(|&b| !b))
+                {
+                    println!(
+                        "[ALERTER] OF [COFFEE MAKER {:?}]: PREPARING ALARM {:?}",
+                        coffee_maker_id, has_to_alert
+                    );
+                    let containers_level = get_quantity_of(containers.clone());
+                    for i in 0..3 {
+                        if has_to_alert[i] {
+                            let ingredient = &values[&(i as i32)];
+                            let value = containers_level[ingredient];
+                            if value == VALUE_TO_ALERT {
+                                println!("[ALERTER] OF [COFFEE MAKER {:?}]: THE LEVEL OF THE CONTAINER OF {:?} IS {:?}", coffee_maker_id, ingredient, value);
+                            }
+                            has_to_alert[i] = false;
+                        }
+                    }
+                }
+            }
+            condvar.notify_all();
+        });
+
+        match handle.join() {
+            Ok(_) => println!(
+                "[ALERTER] OF [COFFEE MAKER {:?}]: FINISHING",
+                coffee_maker_id
+            ),
+            Err(err) => println!(
+                "[ALERTER] OF [COFFEE MAKER {:?}]: {:?} WHEN JOINING",
+                err, coffee_maker_id
+            ),
+        }
 
         Ok(())
     }
