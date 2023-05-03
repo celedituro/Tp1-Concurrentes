@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Condvar, Mutex, RwLock};
 use std::thread::{self, JoinHandle};
 
-const DISPENSERS: u32 = 2;
+const DISPENSERS: u32 = 3;
 const COFFEE: &str = "coffee";
 const FOAM: &str = "foam";
 const HOT_WATER: &str = "hot_water";
@@ -325,7 +325,7 @@ mod tests {
     fn test05_get_more_foam_and_decrease_quantity_of_milk_container() {
         let mut orders_list = Vec::new();
         let order = Order::new(5, 10, 5, 10);
-        for _ in 0..15 {
+        for _ in 0..14 {
             orders_list.push(order.clone());
         }
         let orders = Arc::new(RwLock::new(orders_list));

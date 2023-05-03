@@ -4,7 +4,7 @@ pub mod presenter {
         collections::HashMap,
         sync::{Arc, Condvar, Mutex, RwLock},
         thread,
-        //time::Duration,
+        time::Duration,
     };
 
     use crate::{
@@ -30,12 +30,12 @@ pub mod presenter {
     pub fn present_level_of_containers(
         containers_level: Vec<HashMap<String, u32>>,
     ) -> Result<(), Error> {
-        println!("[LEVEL OF CONTAINERS]");
+        println!("\n[LEVEL OF CONTAINERS]\n");
         for (id, containers) in containers_level.iter().enumerate() {
             for ingredient in INGREDIENTS {
                 let quantity = containers[&ingredient.to_owned()];
                 println!(
-                    "[{:?} CONTAINER] OF [COFFEE MACHINE {:?}]: {:?}",
+                    "\n[{:?} CONTAINER] OF [COFFEE MACHINE {:?}]: {:?}\n",
                     ingredient, id as i32, quantity
                 );
             }
@@ -47,11 +47,11 @@ pub mod presenter {
     /// Shows the current quantity of ingredients consumed between all the containers of all the
     /// coffee machines.
     pub fn present_ingredients_consumed(ingredients_consumed: HashMap<String, u32>) {
-        println!("[INGREDIENTS CONSSUMED]");
+        println!("\n[INGREDIENTS CONSSUMED]\n");
 
         for ingredient in INGREDIENTS {
             let quantity = ingredients_consumed[&ingredient.to_owned()];
-            println!("CONSUMPTION OF {:?}: {:?}", ingredient, quantity);
+            println!("\nCONSUMPTION OF {:?}: {:?}\n", ingredient, quantity);
         }
     }
 
@@ -65,7 +65,7 @@ pub mod presenter {
     ) -> Result<(), Error> {
         let containers_level = get_containers_info(coffee_makers);
         present_level_of_containers(containers_level.clone())?;
-        println!("[TOTAL ORDERS PROCESSED]: {:?}", current_num_orders);
+        println!("\n[TOTAL ORDERS PROCESSED]: {:?}\n", current_num_orders);
         let ingredients_consumed = get_ingredients_consumed(containers_level, initial_quantity);
         present_ingredients_consumed(ingredients_consumed);
 
@@ -81,7 +81,7 @@ pub mod presenter {
         if let Ok(orders_processed) = orders_processed_lock.lock() {
             println!("[PRESENTER]: WAITING");
             if let Ok(orders_processed) = condvar.wait_while(orders_processed, |num| *num == 0) {
-                println!("PRESENTING STATS WITH NUM ORDERS: {:?}", orders_processed);
+                println!("[PRESENTER]: PREPARING STATS",);
                 present_stats(
                     coffee_makers.clone(),
                     *orders_processed as u32,
@@ -102,18 +102,21 @@ pub mod presenter {
     ) -> Result<(), Error> {
         let presenter_handle = thread::spawn(move || loop {
             println!("[PRESENTER]: STARTING");
-            if let Ok(orders) = orders.read() {
-                if orders.is_empty() {
-                    println!("[PRESENTER]: FINISHING SINCE NO MORE ORDERS");
+
+            match present_statistics(coffee_makers.clone(), orders_processed.clone()) {
+                Ok(_) => {
+                    println!("[PRESENTER]: FINISHING");
+                    thread::sleep(Duration::from_secs(3))
+                }
+                Err(error) => {
+                    println!("[PRESENTER]: {:?}", error);
                     break;
                 }
             }
 
-            match present_statistics(coffee_makers.clone(), orders_processed.clone()) {
-                Ok(_) => println!("[PRESENTER]: FINISHING"),
-                //thread::sleep(Duration::from_secs(3)),
-                Err(error) => {
-                    println!("[PRESENTER]: {:?}", error);
+            if let Ok(orders) = orders.read() {
+                if orders.is_empty() {
+                    println!("[PRESENTER]: FINISHING SINCE NO MORE ORDERS");
                     break;
                 }
             }
@@ -170,7 +173,7 @@ pub mod presenter {
                             let ingredient = &values[&(i as i32)];
                             let value = containers_level[ingredient];
                             if value == VALUE_TO_ALERT {
-                                println!("[ALERTER] OF [COFFEE MAKER {:?}]: THE LEVEL OF THE CONTAINER OF {:?} IS {:?}", coffee_maker_id, ingredient, value);
+                                println!("\n[ALERTER] OF [COFFEE MAKER {:?}]: THE LEVEL OF THE CONTAINER OF {:?} IS {:?}\n", coffee_maker_id, ingredient, value);
                             }
                             has_to_alert[i] = false;
                         }
