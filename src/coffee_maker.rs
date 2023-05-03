@@ -324,7 +324,7 @@ mod tests {
     #[test]
     fn test05_get_more_foam_and_decrease_quantity_of_milk_container() {
         let mut orders_list = Vec::new();
-        let order = Order::new(5, 10, 5, 10);
+        let order = Order::new(5, 5, 5, 10);
         for _ in 0..14 {
             orders_list.push(order.clone());
         }
